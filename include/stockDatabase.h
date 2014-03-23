@@ -8,9 +8,9 @@ typedef enum {
 	NO_STOCK_FOR_ID = OK+1, STOCK_EXISTS
 } DBErrors;
 
-int save(StockT stock);
-int getByProductId(int productId, Stock stock);
-int update(StockT stock);
-int remove(StockT stock);
+int saveStock(StockT stock);
+int getStockByProductId(int productId, Stock stock);
+int updateStock(StockT stock);
+int deleteStock(StockT stock);
 
 #endif

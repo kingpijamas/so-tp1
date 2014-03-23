@@ -1,11 +1,13 @@
 #include "../include/stockDatabase.h"
 #include <unistd.h>
+#include <sys/stat.h>
 #include <fcntl.h>
-#include <stdio.h> // for perror
+#include <errno.h>
+#include <stdio.h> // for perror and remove
 
-#define DB_PATH	"stockDB.csv"
+#define DB_ROOT_PATH	"stockDB"
 
-int save(StockT stock) {
+int saveStock(StockT stock) {
 	switch (getByProductId(stock.productId, &stock)) {
 		case OK:
 			return STOCK_EXISTS;
@@ -14,12 +16,12 @@ int save(StockT stock) {
 	return OK;
 }
 
-int getByProductId(int productId, Stock stock) {
+int getStockByProductId(int productId, Stock stock) {
 	struct StockT readStock;
 
-	FILE * file = __open("r");
+	FILE * file = __open(productId, "r");
 	if (file == NULL) {
-		__init();
+		__init_db();
 		return NO_STOCK_FOR_ID;
 	}
 
@@ -37,21 +39,38 @@ int getByProductId(int productId, Stock stock) {
 	return OK;
 }
 
-int update(StockT stock);
+int updateStock(StockT stock) {
+	switch (getByProductId(stock.productId, &stock)) {
+		case NO_STOCK_FOR_ID:
+			return NO_STOCK_FOR_ID;
+		case OK:
+			__write_new(stock);
+			return OK;
+	}
+}
 
-int remove(StockT stock);
+int deleteStock(StockT stock) {
+	remove(__get_path_to_tuple(tupleId));
+}
 
-void __init() {
-	FILE * file = __open("a");
-	fclose(file);
+void __init_db() {
+	// read/write/search permissions for owner and group, and with read/search permissions for others
+	if (mkdir(DB_ROOT_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
+		// error ocurred!
+	}
 }
 
 void __write_new(StockT stock) {
-	FILE * file = __open("a");
+	FILE * file = __open(stock->productId, "w");
 	fprintf(file, "%d,%d\n", stock.productId, stock.quantity);
 	fclose(file);
 }
 
-FILE * __open(const char * mode) {
-	return fopen(DB_PATH,mode);
+FILE * __open(int tupleId, const char * mode) {
+	return fopen(__get_path_to_tuple(tupleId), mode);
+}
+
+char * __get_path_to_tuple(int tupleId) {
+	char path[32];
+	return sprintf(path, "%s/%d", DB_ROOT_PATH, tupleId);
 }
