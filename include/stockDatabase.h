@@ -5,11 +5,11 @@
 #include "model.h"
 
 typedef enum {
-	NO_PRODUCT_FOR_ID = OK+1
+	NO_STOCK_FOR_ID = OK+1, STOCK_EXISTS
 } DBErrors;
 
 int save(StockT stock);
-StockT getByProductId(int productId);
+int getByProductId(int productId, Stock stock);
 int update(StockT stock);
 int remove(StockT stock);
 
