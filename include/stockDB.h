@@ -5,7 +5,7 @@
 #include "model.h"
 
 typedef enum {
-	NO_STOCK_FOR_ID = OK+1, STOCK_EXISTS
+	NO_STOCK_FOR_ID = OK+1, STOCK_EXISTS, DELETE_ERROR, UPDATE_ERROR
 } DBErrors;
 
 int saveStock(StockT stock);

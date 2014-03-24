@@ -1,0 +1,43 @@
+#include <stdio.h>
+#include "../include/stockDB.h"
+#include "../include/common.h"
+#include "../include/model.h"
+
+int main(void) {
+	StockT a,b,c;
+	a.productId = 1;
+	a.quantity = 100;
+
+	b.productId = 2;
+	b.quantity = 500;
+
+	saveStock(a);
+	saveStock(b);
+
+	if (getStockByProductId(1, &c) != NO_STOCK_FOR_ID){
+		printf("productId=%d, quantity=%d\n", a.productId, a.quantity);
+	} else {
+		printf("Error (NOT OK)\n");
+	}
+	if (getStockByProductId(3, &c) == NO_STOCK_FOR_ID){
+		printf("Error (OK)\n");
+	}else {
+		printf("NO Error (NOT OK)\n");
+	}
+
+	a.quantity = 99;
+	updateStock(a);
+	if (getStockByProductId(1, &c) != NO_STOCK_FOR_ID){
+		printf("productId=%d, quantity=%d\n", a.productId, a.quantity);
+	} else {
+		printf("Error (NOT OK)\n");
+	}
+
+	deleteStock(b);
+	if (getStockByProductId(2, &c) == NO_STOCK_FOR_ID){
+		printf("Error (OK)\n");
+	}else {
+		printf("NO Error (NOT OK)\n");
+	}
+	return 0;
+}
