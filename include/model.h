@@ -2,7 +2,8 @@
 #define MODEL_H
 
 typedef struct {
-	int productId;
+	char* name;
+	//int productId;
 	int quantity;
 } StockT;
 
