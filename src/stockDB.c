@@ -35,14 +35,15 @@ int getStockByProductName(char* name, Stock stock) {
 
 	while(fscanf(file,"%s ,%d\n", readStock.name, &(readStock.quantity)) != EOF
 			&& name != readStock.name) {
-
-		printf("%s\n",readStock.name);
-		printf("%i\n",readStock.quantity);
 ;
 	}
 	fclose(file);
 
-	if (name != readStock.name) {
+	// printf("%s\n",name);
+	// printf("%s\n",readStock.name);
+	// printf("%i\n",readStock.quantity);
+	if (*name != *readStock.name) {
+		printf("%s\n","no" );
 		stock = NULL;
 		return NO_STOCK_FOR_NAME;
 	}
