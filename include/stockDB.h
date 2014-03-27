@@ -5,7 +5,7 @@
 #include "model.h"
 
 typedef enum {
-	NO_STOCK_FOR_NAME = OK+1, STOCK_EXISTS, DELETE_ERROR, UPDATE_ERROR
+	CANNOT_CREATE_DATABASE = OK+1, CANNOT_CREATE_TABLE, NO_STOCK_FOR_NAME, STOCK_EXISTS, DELETE_ERROR, UPDATE_ERROR
 } DBErrors;
 
 /* Saves an element on the DB. See model.h for StockT. */

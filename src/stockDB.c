@@ -6,10 +6,12 @@
 #include <stdio.h> // for perror and remove
 #include <stdlib.h> // for malloc
 
-#define DB_ROOT_PATH "stockDB"
-#define MAX_LENGHT 50
+#define DB_ROOT_PATH "db"
+#define TABLE_NAME "stock"
+#define TABLE_PATH DB_ROOT_PATH"/"TABLE_NAME
+#define MAX_LENGTH 50
 
-void __init_db();
+int __init_db();
 void __write_new(StockT stock);
 FILE * __open(char* name, const char * mode);
 char * __get_path_to_tuple(char* name);
@@ -25,7 +27,7 @@ int saveStock(StockT stock) {
 
 int getStockByProductName(char* name, Stock stock) {
 	StockT readStock;
-	readStock.name=(char*)malloc(MAX_LENGHT);
+	readStock.name=(char*)malloc(MAX_LENGTH);
 
 	FILE * file = __open(name, "r");
 	if (file == NULL) {
@@ -34,9 +36,7 @@ int getStockByProductName(char* name, Stock stock) {
 	}
 
 	while(fscanf(file,"%s ,%d\n", readStock.name, &(readStock.quantity)) != EOF
-			&& name != readStock.name) {
-;
-	}
+			&& name != readStock.name) {;}
 	fclose(file);
 
 	// printf("%s\n",name);
@@ -72,10 +72,12 @@ int deleteStock(StockT stock) {
 	return DELETE_ERROR;
 }
 
-void __init_db() {
+int __init_db() {
 	// read/write/search permissions for owner and group, and with read/search permissions for others
-	if (mkdir(DB_ROOT_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
-		// error ocurred!
+	if (mkdir(DB_ROOT_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != -1) {
+		return CANNOT_CREATE_DATABASE;
+	} else if (mkdir(TABLE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != -1){
+
 	}
 }
 
