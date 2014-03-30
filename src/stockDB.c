@@ -1,17 +1,15 @@
 #include "../include/stockDB.h"
 #include <unistd.h>
 #include <sys/stat.h>
+#include <string.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <stdio.h> // for perror and remove
-#include <stdlib.h> // for malloc
 
-#define DB_ROOT_PATH "db"
-#define TABLE_NAME "stock"
 #define TABLE_PATH DB_ROOT_PATH"/"TABLE_NAME
-#define MAX_LENGTH 50
+#define MAX_TUPLE_LENGTH 32
 
-int __init_db();
+int __init();
 void __write_new(StockT stock);
 FILE * __open(char* name, const char * mode);
 char * __get_path_to_tuple(char* name);
@@ -26,27 +24,17 @@ int saveStock(StockT stock) {
 }
 
 int getStockByProductName(char* name, Stock stock) {
+	int initVal;
 	StockT readStock;
-	readStock.name=(char*)malloc(MAX_LENGTH);
 
 	FILE * file = __open(name, "r");
 	if (file == NULL) {
-		__init_db();
-		return NO_STOCK_FOR_NAME;
+		initVal = __init();
+		return (initVal != OK)? initVal : NO_STOCK_FOR_NAME;
 	}
-
-	while(fscanf(file,"%s ,%d\n", readStock.name, &(readStock.quantity)) != EOF
-			&& name != readStock.name) {;}
+	readStock.name = name;
+	while(fscanf(file,"%d\n", &(readStock.quantity)) != EOF) {;}
 	fclose(file);
-
-	// printf("%s\n",name);
-	// printf("%s\n",readStock.name);
-	// printf("%i\n",readStock.quantity);
-	if (*name != *readStock.name) {
-		printf("%s\n","no" );
-		stock = NULL;
-		return NO_STOCK_FOR_NAME;
-	}
 	stock = &readStock;
 	return OK;
 }
@@ -59,37 +47,41 @@ int updateStock(StockT stock) {
 			__write_new(stock);
 			return OK;
 		default:
-			return UPDATE_ERROR;
+			return UNEXPECTED_UPDATE_ERROR;
 	}
 }
 
 int deleteStock(StockT stock) {
-	char fname[32];
-	sprintf(fname, "%s/%s", DB_ROOT_PATH, stock.name);
-	if (remove(fname) == 0){
-		return OK;
+	char fname[MAX_TUPLE_LENGTH];
+	sprintf(fname, "%s/%s", TABLE_PATH, stock.name);
+	if (remove(fname) != 0){
+		return DELETE_ERROR;
 	}
-	return DELETE_ERROR;
+	return OK;
 }
 
-int __init_db() {
+int __init() {
 	// read/write/search permissions for owner and group, and with read/search permissions for others
-	if (mkdir(DB_ROOT_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != -1) {
+	if (mkdir(DB_ROOT_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1
+		&& errno != EEXIST) {
 		return CANNOT_CREATE_DATABASE;
-	} else if (mkdir(TABLE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != -1){
-
 	}
+	if (mkdir(TABLE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1
+		&& errno != EEXIST) {
+		return CANNOT_CREATE_TABLE;
+	}
+	return OK;
 }
 
 void __write_new(StockT stock) {
 	FILE * file = __open(stock.name, "w");
-	fprintf(file, "%s ,%d\n", stock.name, stock.quantity);
+	fprintf(file, "%d\n", stock.quantity);
 	fclose(file);
 }
 
 // Revisar sprintf con los cambios %s/%s
 FILE * __open(char* name, const char * mode) {
-	char fname[32];
-	sprintf(fname, "%s/%s", DB_ROOT_PATH, name);
+	char fname[MAX_TUPLE_LENGTH];
+	sprintf(fname, "%s/%s", TABLE_PATH, name);
 	return fopen(fname, mode);
 }

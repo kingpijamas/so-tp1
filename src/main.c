@@ -4,6 +4,8 @@
 #include "../include/model.h"
 
 int main(void) {
+	int testAns;
+
 	StockT a,b,c;
 	a.name = "pen";
 	a.quantity = 100;
@@ -14,31 +16,41 @@ int main(void) {
 	saveStock(a);
 	saveStock(b);
 
-	if (getStockByProductName(a.name, &c) != NO_STOCK_FOR_NAME){
-		printf("Name=%s, quantity=%d\n", a.name, a.quantity);
+	testAns = getStockByProductName(a.name, &c);
+	if (testAns == OK){
+		printf("Name=%s, quantity=%d (OK)\n", a.name, a.quantity);
 	} else {
-		printf("Error (NOT OK)\n");
+		printf("Error (NOT OK) %d\n",testAns);
 	}
-	if (getStockByProductName("pencil", &c) == NO_STOCK_FOR_NAME){
-		printf("Error (OK)\n");
-	}else {
-		printf("NO Error (NOT OK)\n");
+
+	testAns = getStockByProductName("pencil", &c);
+	if (testAns == NO_STOCK_FOR_NAME){
+		printf("Expected error (OK)\n");
+	} else {
+		printf("Unexpected error (NOT OK): %d\n", testAns);
 	}
 
 	a.quantity = 99;
-	updateStock(a);
-	if (getStockByProductName("pen", &c) != NO_STOCK_FOR_NAME){
-		printf("Name=%s, quantity=%d\n", a.name, a.quantity);
+	testAns = updateStock(a);
+	if(testAns != OK){
+		printf("Update error: %d\n", testAns);
+	}
+	testAns = getStockByProductName("pen", &c);
+	if(testAns == OK){
+		printf("Name=%s, quantity=%d (OK)\n", a.name, a.quantity);
 	} else {
-		printf("Error (NOT OK)\n");
+		printf("Unexpected error (NOT OK): %d\n", testAns);
 	}
 
-	deleteStock(b);
-	if (getStockByProductName("stapler", &c) == NO_STOCK_FOR_NAME){
+	testAns = deleteStock(b);
+	if(testAns != OK) {
+		printf("Delete error: %d\n", testAns);
+	}
+	testAns = getStockByProductName("stapler", &c);
+	if (testAns == NO_STOCK_FOR_NAME){
 		printf("Error (OK)\n");
 	}else {
-		printf("NO Error (NOT OK)\n");
+		printf("NO Error (NOT OK): %d\n", testAns);
 	}
-
 	return 0;
 }

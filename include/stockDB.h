@@ -3,9 +3,18 @@
 
 #include "common.h"
 #include "model.h"
+#include "utils.h"
+
+#define DB_ROOT_PATH "db"
+#define TABLE_NAME "stockDB"
 
 typedef enum {
-	CANNOT_CREATE_DATABASE = OK+1, CANNOT_CREATE_TABLE, NO_STOCK_FOR_NAME, STOCK_EXISTS, DELETE_ERROR, UPDATE_ERROR
+	CANNOT_CREATE_DATABASE = OK+1,
+	CANNOT_CREATE_TABLE,
+	NO_STOCK_FOR_NAME,
+	STOCK_EXISTS,
+	DELETE_ERROR,
+	UNEXPECTED_UPDATE_ERROR
 } DBErrors;
 
 /* Saves an element on the DB. See model.h for StockT. */
