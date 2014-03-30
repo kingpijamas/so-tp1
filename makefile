@@ -1,5 +1,8 @@
 CC = gcc
-FILES = src/main.c src/stockDB.c 
+SRC = src
+#MODE = 
+FILES = $(shell find $(SRC) -name '*.c') 
+#$(shell find $(MODE) -name '*.c')
 OUT_EXE = tp
 COPTS = -Wall -g
 

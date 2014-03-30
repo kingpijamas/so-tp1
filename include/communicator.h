@@ -1,7 +1,10 @@
 #ifndef COMMUNICATOR_H
 #define COMMUNICATOR_H
 
-int write(int fromId, int toId, void * msg, int msgLen);
-int read(int fromId, int toId, void * msg, int msgLen);
+//fromId toId from the processes
+int send(int fromId, int toId, void * buf, int len);
+
+//who called recv could easily go into the message (if necessary)
+int recv(void * buf, int len);
 
 #endif
