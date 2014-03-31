@@ -521,14 +521,8 @@ Base de datos
 \end_layout
 
 \begin_layout Standard
-La base de datos garantiza la exclusión mutua a través del lockeo, como
- se requiere en la consigna (a través del uso de 
-\shape italic
-fcntl()
-\shape default
- y advisory locking).
- En las implementaciones con servidor, esta será garantizada por el servidor
- -quien llamará de todas formas a este módulo cuando le sea necesario.
+La base de datos serán archivos con el nombre del producto y la cantidad
+ de stock.
 \end_layout
 
 \begin_layout Standard
@@ -620,6 +614,96 @@ productDB.h
 
 \end_layout
 
+\begin_layout Subsection*
+Exclusión mutua
+\end_layout
+
+\begin_layout Standard
+La exclusión mutua se garantiza a través del lockeo, como se requiere en
+ la consigna (a través del uso de 
+\shape italic
+fcntl()
+\shape default
+ y advisory locking) que se realiza con un módulo de exclusión mutua.
+ En las implementaciones con servidor, esta será garantizada por el servidor
+ -quien llamará de todas formas a este módulo si le es necesario.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float algorithm
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset space \qquad{}
+\end_inset
+
+StockT bdx_db_save_product(Product product);
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset space \qquad{}
+\end_inset
+
+int bdx_db_get_product_by_name(char * name, Product * productp);
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset space \qquad{}
+\end_inset
+
+int bxd_db_update_product(Product product);
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset space \qquad{}
+\end_inset
+
+int bdx_db_delete_product(char * name);
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Estructura de 
+\shape italic
+bdx.h
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section*
 Funcionamiento general de los sistemas
 \end_layout
@@ -653,7 +737,7 @@ Se decide sustraer un lápiz del depósito
 \begin_layout Enumerate
 Se llama a la función 
 \shape italic
-db_get_product_by_name()
+take_product()
 \shape default
  con el nombre 
 \begin_inset Quotes eld
@@ -663,7 +747,15 @@ lapiz
 \begin_inset Quotes erd
 \end_inset
 
- y un puntero a un struct local de tipo Product.
+ y la cantidad deseada.
+\end_layout
+
+\begin_layout Enumerate
+Esta llama al módulo de exclusión mutua .
+\end_layout
+
+\begin_layout Enumerate
+El módulo de exclusión mutua llama a db_get_product_by_name().
 \end_layout
 
 \begin_layout Enumerate
