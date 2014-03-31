@@ -640,7 +640,7 @@ status open
 \begin_inset space \qquad{}
 \end_inset
 
-StockT bdx_db_save_product(Product product);
+db_ret_code dbx_save_product(Product product);
 \end_layout
 
 \begin_layout Plain Layout
@@ -654,7 +654,7 @@ StockT bdx_db_save_product(Product product);
 \begin_inset space \qquad{}
 \end_inset
 
-int bdx_db_get_product_by_name(char * name, Product * productp);
+db_ret_code dbx_get_product_by_name(char * name, Product * productp);
 \end_layout
 
 \begin_layout Plain Layout
@@ -668,7 +668,7 @@ int bdx_db_get_product_by_name(char * name, Product * productp);
 \begin_inset space \qquad{}
 \end_inset
 
-int bxd_db_update_product(Product product);
+db_ret_code dbx_update_product(Product product);
 \end_layout
 
 \begin_layout Plain Layout
@@ -682,7 +682,7 @@ int bxd_db_update_product(Product product);
 \begin_inset space \qquad{}
 \end_inset
 
-int bdx_db_delete_product(char * name);
+db_ret_code dbx_delete_product(char * name);
 \end_layout
 
 \begin_layout Plain Layout
