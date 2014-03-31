@@ -1,11 +1,8 @@
-#ifndef MODEL_H
-#define MODEL_H
-
-#define NAME_LEN 8
+#ifndef _MODEL_
+#define _MODEL_
 
 typedef struct {
-	//String of size == NAME_LEN
-	char[NAME_LEN+1] name;
+	char * name;
 	int quantity;
 } Product;
 
