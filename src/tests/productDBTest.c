@@ -1,7 +1,7 @@
 #include <stdio.h>
-#include "../include/productDB.h"
-#include "../include/common.h"
-#include "../include/model.h"
+#include "../../include/productDB.h"
+#include "../../include/common.h"
+#include "../../include/model.h"
 
 int main(void) {
 	int testAns;
