@@ -2,6 +2,7 @@
 #include "../include/productDB.h"
 #include "../include/common.h"
 #include "../include/model.h"
+#include "../include/client.h"
 
 int main(void) {
 	int testAns;
@@ -18,6 +19,10 @@ int main(void) {
 	db_save_product(a);
 	db_save_product(b);
 
+	//Initialize server
+	//Initialize client?
+	 show_product("pen");
+
 	testAns = db_get_product_by_name(a.name, &c);
 	if (testAns == OK){
 		printf("Name=%s, quantity=%d (OK)\n", a.name, a.quantity);
@@ -25,7 +30,7 @@ int main(void) {
 		printf("Error (NOT OK) %d\n",testAns);
 		return 0;
 	}
-
+/*
 	testAns = db_get_product_by_name("pencil", &c);
 	if (testAns == NO_PRODUCT_FOR_NAME){
 		printf("Expected error (OK)\n");
@@ -59,7 +64,7 @@ int main(void) {
 	}else {
 		printf("NO Error (NOT OK): %d\n", testAns);
 		return 0;
-	}
+	}*/
 	printf("All tests passed\n");
 	return 0;
 }

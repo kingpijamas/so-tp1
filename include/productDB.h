@@ -4,7 +4,7 @@
 #include "common.h"
 #include "model.h"
 
-#define DB_ROOT_PATH "db"
+#define DB_ROOT_PATH "stockDB"
 #define TABLE_NAME "product"
 
 typedef enum {
