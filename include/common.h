@@ -2,6 +2,7 @@
 #define _COMMON_
 
 #define OK 0
+#define ERROR -1
 
 typedef enum { false,true } boolean;
 

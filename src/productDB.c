@@ -66,7 +66,6 @@ db_ret_code db_get_product_by_name(char * name, Product * productp) {
 	fclose(file);
 	(*productp).name=rdProduct.name;
 	(*productp).quantity=rdProduct.quantity;
-	printf("Name=%s, quantity=%d\n", (*productp).name, (*productp).quantity);
 	return OK;
 }
 
