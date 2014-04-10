@@ -7,6 +7,11 @@
 #define DB_ROOT_PATH "db"
 #define TABLE_NAME "product"
 
+#define TABLE_PATH	DB_ROOT_PATH"/"TABLE_NAME
+#define BUFFER_SIZE 100
+
+#define MAX_NAME_DB 1000
+
 typedef enum {
 	DB_NOT_INITIALIZED = OK+1,
 	CANNOT_CREATE_DATABASE,

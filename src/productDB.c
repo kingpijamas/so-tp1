@@ -2,12 +2,10 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <stdio.h> // for perror and remove
-
-#define TABLE_PATH	DB_ROOT_PATH"/"TABLE_NAME
-#define BUFFER_SIZE 100
 
 static void __write_new(Product product);
 static FILE * __open(char * name, const char * mode);
@@ -54,6 +52,7 @@ db_ret_code db_save_product(Product product) {
 
 db_ret_code db_get_product_by_name(char * name, Product * productp) {
 	Product rdProduct;
+	rdProduct.name=malloc(MAX_NAME_DB);
 	if (!init) {
 		return DB_NOT_INITIALIZED;
 	}
@@ -63,9 +62,10 @@ db_ret_code db_get_product_by_name(char * name, Product * productp) {
 		return NO_PRODUCT_FOR_NAME;
 	}
 	rdProduct.name = name;
-	while(fscanf(file,"%d\n", &(rdProduct.quantity)) != EOF) {;}
+	while(fscanf(file,"%d\n", &((rdProduct).quantity)) != EOF) {;}
 	fclose(file);
-	productp = &rdProduct;
+	(*productp).name=rdProduct.name;
+	(*productp).quantity=rdProduct.quantity;
 	return OK;
 }
 
