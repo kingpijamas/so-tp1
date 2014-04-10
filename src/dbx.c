@@ -1,11 +1,11 @@
 #include "../include/dbx.h"
 
 // move to locks.c
-int dbx_change_lock(struct flock fl, int lock_ mode){
-	if(read_mode){
+int dbx_change_lock(struct flock fl, int lock_mode){
+	if(READ_MODE){
 		fl.l_type=F_RDLCK;
 		return OK;
-	}else if(write_mode){
+	}else if(WRITE_MODE){
 		fl.l_type=F_WRLCK;
 		return OK;
 	}else{
@@ -34,11 +34,8 @@ struct flock init_flock(){
 	Product dbxprod;
 	dbxprod.name=malloc(MAX_NAME_DB); //Hacer un product init en commoc.c o algo así
 
-	// printf("%s\n","bdxgetProduct" );
-
 	char fname[32];
 	sprintf(fname, "%s/%s", TABLE_PATH, name);
-	printf("%s\n",fname);
 
 	//Open to get fd. Is there another way of doing it?
 	if((fd=open(fname, O_RDWR)) == -1){

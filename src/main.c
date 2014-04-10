@@ -23,15 +23,15 @@ int main(void) {
 
 	//Initialize server
 	//Initialize client?
-	show_product("pen");
+	// show_product("pen");
 
-/*	testAns = db_get_product_by_name("pen", &c);
-	if (testAns == OK){
-		printf("Name=%s, quantity=%d (OK)\n", c.name, c.quantity);
-	} else {
-		printf("Error (NOT OK) %d\n",testAns);
-		return 0;
-	}*/
+	// testAns = db_get_product_by_name("pen", &c);
+	// if (testAns == OK){
+	// 	printf("Name=%s, quantity=%d (OK)\n", c.name, c.quantity);
+	// } else {
+	// 	printf("Error (NOT OK) %d\n",testAns);
+	// 	return 0;
+	// }
 
 	// testAns = db_get_product_by_name("pencil", &c);
 	// if (testAns == NO_PRODUCT_FOR_NAME){
@@ -68,5 +68,6 @@ int main(void) {
 	// 	return 0;
 	// }
 	// printf("All tests passed\n");
+
 	return 0;
 }
