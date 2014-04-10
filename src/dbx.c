@@ -1,7 +1,7 @@
 #include "../include/dbx.h"
 
 // move to locks.c
-int dbx_change_lock(struct flock fl, int lock_mode){
+int dbx_change_lock(struct flock fl, int lock_ mode){
 	if(read_mode){
 		fl.l_type=F_RDLCK;
 		return OK;
@@ -20,9 +20,9 @@ struct flock init_flock(){
 	return fl;
 }
 
- db_ret_code dbx_save_product(Product product);
- db_ret_code dbx_update_product(Product product);
- db_ret_code dbx_delete_product(char * name);
+ db_ret_code dbx_save_product(Product product);//write_mode
+ db_ret_code dbx_update_product(Product product);//write_mode
+ db_ret_code dbx_delete_product(char * name); //write_mode
 
  db_ret_code dbx_get_product_by_name(char * name, Product * product){
 	int db_ret_code_dbx;
