@@ -71,10 +71,13 @@ db_ret_code db_get_product_by_name(char * name, Product * productp) {
 
 db_ret_code db_update_product(Product product) {
 	int getVal;
+	Product originalProduct;
+	product_init(&originalProduct);
+
 	if (!init) {
 		return DB_NOT_INITIALIZED;
 	}
-	getVal = db_get_product_by_name(product.name, &product);
+	getVal = db_get_product_by_name(product.name, &originalProduct);
 	switch (getVal) {
 		case NO_PRODUCT_FOR_NAME:
 			return NO_PRODUCT_FOR_NAME;
