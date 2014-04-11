@@ -8,7 +8,7 @@ void show_product(char * prodname){
 	Product product;
 	product.name=malloc(MAX_NAME_CLIENT);
 	dbx_get_product_by_name(prodname, &product);
-	// printf("Name=%s, quantity=%d\n", product.name, product.quantity);
+	printf("Name=%s, quantity=%d\n", product.name, product.quantity);
 }
 
 // adds a new product to the stock - this is used as an initialization method
