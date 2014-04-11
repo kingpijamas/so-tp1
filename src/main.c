@@ -23,10 +23,11 @@ int main(void) {
 
 	//Initialize server
 	// Initialize client?
-	show_product("pen");
-	remove_product("pen");
-	add_product("rubber",70);
-	deposit_product("rubber",80);
+	// show_product("pen");
+	// remove_product("pen");
+	// add_product("rubber",70);
+	// deposit_product("rubber",80);
+	// take_product("rubber",10);
 
 /*	testAns = db_get_product_by_name("pen", &c);
 	if (testAns == OK){

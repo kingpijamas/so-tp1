@@ -6,6 +6,7 @@
 #define OK 0
 #define ERROR -1
 #define MAX_NAME 1000
+#define NEGATIVE -1
 
 typedef enum { false,true } boolean;
 
