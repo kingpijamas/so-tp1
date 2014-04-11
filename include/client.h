@@ -4,7 +4,6 @@
 #include "common.h"
 #include "model.h"
 #include "communicator.h"
-#define MAX_NAME_CLIENT 1000
 
 // displays available data for product of name == prodname
 void show_product(char * prodname);

@@ -14,7 +14,12 @@ void show_product(char * prodname){
 
 // adds a new product to the stock - this is used as an initialization method
 void add_product(char * prodname, int quantity){
-	// db_save_product
+	Product product;
+	product_init(&product);
+	product.name=prodname;
+	product.quantity=quantity;
+
+	dbx_save_product(product);
 }
 
 // removes a product from the stock altogether - the opposite of add_product

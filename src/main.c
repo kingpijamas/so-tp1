@@ -25,6 +25,7 @@ int main(void) {
 	//Initialize client?
 	show_product("pen");
 	remove_product("pen");
+	add_product("rubber",70);
 
 /*	testAns = db_get_product_by_name("pen", &c);
 	if (testAns == OK){

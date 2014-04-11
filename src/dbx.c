@@ -59,11 +59,25 @@ void unlock_and_close(int fd, struct flock * fl){
 	close(fd);
 }
 
-void product_init(Product * prod){
-	(*prod).name=malloc(MAX_NAME);
-}
+//REVISAR... VALE LA PENA LOCKEAR? ALGUIN PUEDE ENTRAR?
+ db_ret_code dbx_save_product(Product product){
+ 	int db_ret_code;
+	int fd;
 
- db_ret_code dbx_save_product(Product product);//write_mode
+	struct flock fl=init_flock();
+	fl.l_pid=getpid();
+	dbx_change_lock(&fl,WRITE_MODE);
+
+
+	db_ret_code=db_save_product(product);
+
+	fd=open_and_lock(product.name, &fl);
+
+	unlock_and_close(fd, &fl);
+
+	return db_ret_code;
+ };//write_mode
+
  db_ret_code dbx_update_product(Product product);//write_mode
 
  db_ret_code dbx_delete_product(char * name){
