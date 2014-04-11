@@ -2,12 +2,10 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <stdio.h> // for perror and remove
-
-#define TABLE_PATH	DB_ROOT_PATH"/"TABLE_NAME
-#define BUFFER_SIZE 100
 
 static void __write_new(Product product);
 static FILE * __open(char * name, const char * mode);
@@ -54,6 +52,7 @@ db_ret_code db_save_product(Product product) {
 
 db_ret_code db_get_product_by_name(char * name, Product * productp) {
 	Product rdProduct;
+	rdProduct.name=malloc(MAX_NAME);
 	if (!init) {
 		return DB_NOT_INITIALIZED;
 	}
@@ -63,22 +62,27 @@ db_ret_code db_get_product_by_name(char * name, Product * productp) {
 		return NO_PRODUCT_FOR_NAME;
 	}
 	rdProduct.name = name;
-	while(fscanf(file,"%d\n", &(rdProduct.quantity)) != EOF) {;}
+	while(fscanf(file,"%d\n", &((rdProduct).quantity)) != EOF) {;}
 	fclose(file);
-	productp = &rdProduct;
+	(*productp).name=rdProduct.name;
+	(*productp).quantity=rdProduct.quantity;
 	return OK;
 }
 
 db_ret_code db_update_product(Product product) {
 	int getVal;
+	Product originalProduct;
+	product_init(&originalProduct);
+
 	if (!init) {
 		return DB_NOT_INITIALIZED;
 	}
-	getVal = db_get_product_by_name(product.name, &product);
+	getVal = db_get_product_by_name(product.name, &originalProduct);
 	switch (getVal) {
 		case NO_PRODUCT_FOR_NAME:
 			return NO_PRODUCT_FOR_NAME;
 		case OK:
+			product.quantity=product.quantity+originalProduct.quantity;
 			__write_new(product);
 			return OK;
 		default:

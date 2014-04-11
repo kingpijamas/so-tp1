@@ -521,14 +521,8 @@ Base de datos
 \end_layout
 
 \begin_layout Standard
-La base de datos garantiza la exclusión mutua a través del lockeo, como
- se requiere en la consigna (a través del uso de 
-\shape italic
-fcntl()
-\shape default
- y advisory locking).
- En las implementaciones con servidor, esta será garantizada por el servidor
- -quien llamará de todas formas a este módulo cuando le sea necesario.
+La base de datos serán archivos con el nombre del producto y la cantidad
+ de stock.
 \end_layout
 
 \begin_layout Standard
@@ -620,6 +614,96 @@ productDB.h
 
 \end_layout
 
+\begin_layout Subsection*
+Exclusión mutua
+\end_layout
+
+\begin_layout Standard
+La exclusión mutua se garantiza a través del lockeo, como se requiere en
+ la consigna (a través del uso de 
+\shape italic
+fcntl()
+\shape default
+ y advisory locking) que se realiza con un módulo de exclusión mutua.
+ En las implementaciones con servidor, esta será garantizada por el servidor
+ -quien llamará de todas formas a este módulo si le es necesario.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float algorithm
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset space \qquad{}
+\end_inset
+
+db_ret_code dbx_save_product(Product product);
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset space \qquad{}
+\end_inset
+
+db_ret_code dbx_get_product_by_name(char * name, Product * productp);
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset space \qquad{}
+\end_inset
+
+db_ret_code dbx_update_product(Product product);
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset VSpace smallskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset space \qquad{}
+\end_inset
+
+db_ret_code dbx_delete_product(char * name);
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Estructura de 
+\shape italic
+bdx.h
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section*
 Funcionamiento general de los sistemas
 \end_layout
@@ -653,7 +737,7 @@ Se decide sustraer un lápiz del depósito
 \begin_layout Enumerate
 Se llama a la función 
 \shape italic
-db_get_product_by_name()
+take_product()
 \shape default
  con el nombre 
 \begin_inset Quotes eld
@@ -663,7 +747,15 @@ lapiz
 \begin_inset Quotes erd
 \end_inset
 
- y un puntero a un struct local de tipo Product.
+ y la cantidad deseada.
+\end_layout
+
+\begin_layout Enumerate
+Esta llama al módulo de exclusión mutua.
+\end_layout
+
+\begin_layout Enumerate
+El módulo de exclusión mutua llama a db_get_product_by_name().
 \end_layout
 
 \begin_layout Enumerate
@@ -699,8 +791,12 @@ take_product(...)
 \end_layout
 
 \begin_layout Enumerate
-Como la implementación base del cliente-servidor no será concurrente, el
- servidor, -quien estará conectado al módulo de comunicación mediante 
+Como la impleme
+\end_layout
+
+\begin_layout Enumerate
+ntación base del cliente-servidor no será concurrente, el servidor, -quien
+ estará conectado al módulo de comunicación mediante 
 \shape italic
 recv(...)-
 \shape default
@@ -708,6 +804,93 @@ recv(...)-
  los demás.
  Para atender el mensaje, el servidor hará las llamadas correspondientes
  a la base de datos.
+\end_layout
+
+\begin_layout Section*
+Implementación
+\end_layout
+
+\begin_layout Section*
+Locks y File Control.
+\end_layout
+
+\begin_layout Standard
+En el módulo de exclusión mutua se genera una estructura flock con el id
+ del proceso cliente.
+ Se lee la respuesta de abrir la sección de la base de datos que se desea
+ leer con O_RDWR y se ataja el error que puede existir.
+ Se hace lo mismo con una llamada a file control seteando un advisory lock
+ con el modo deseado.
+ Ahí se llama a la base de datos, y una vez que se vuelve se utiliza el
+ file control para sacar el lock existente.
+\end_layout
+
+\begin_layout Subsection*
+FIFO
+\end_layout
+
+\begin_layout Standard
+Se inicializa un FIFO desde el server como solo lectura al iniciarlo con
+ un nombre pactado con anterioridad.
+ Cuando los clientes deseen leer o escribir crearán el fifo con el mismo
+ nombre pero modos RDWR o WRONLY según corresponda.
+ Luego escribirán o leerán.
+\end_layout
+
+\begin_layout Subsection*
+Semáforo y memoria compartida
+\end_layout
+
+\begin_layout Standard
+Cliente y servidor comparten una función de alocación de memoria compartida
+ que se maneja con un semáforo.
+ La memoria compartida se lee por polling y se gestiona la lectura escritura
+ a través del semáforo.
+ Cuando un cliente quiere leer, la variable del semáforo se modifica y si
+ es cero se bloquea el cliente.
+ Al finalizar el pedido se modifica la variable nuevamente de manera inversa.
+\end_layout
+
+\begin_layout Subsection*
+Cola de mensajes
+\end_layout
+
+\begin_layout Standard
+Se abre una cola de lectura para el servidor al iniciarlo.
+ Cuando el cliente quiere conectarse con el servidor, abre dos colas una
+ para leer la respuesta del servidor y otra para escribir.
+\end_layout
+
+\begin_layout Subsection*
+Señales y Archivos
+\end_layout
+
+\begin_layout Standard
+Las señales se utilizan para la comunicación entre el cliente y el servidor
+ de manera que cualquiera de los dos se despierta solamente cuando le llega
+ una señal.
+ Una vez despierto, lee de un archivo preacordado el mensaje enviado por
+ el otro y actúa de manera acorde.
+\end_layout
+
+\begin_layout Standard
+Para no perder pedidos el servidor debe enmascar las señales en cuanto se
+ reciba una.
+\end_layout
+
+\begin_layout Subsection*
+Sockets
+\end_layout
+
+\begin_layout Standard
+El servidor tiene una IP declarada y un puerto (los clientes lo conocen
+ para comunicarse con el servidor).
+ Para comenzar el servidor abre un socket y el cliente que desee conectarse
+ abre un socket propio e intenta conectarse.
+ El servidor debe aceptar la conexión y desde allí se comportan como si
+ fueran dos pipes con write y read.
+ Al finalizar el servidor cierra la conexión y al cliente le llega todo
+ lo que ocurrió.
 \end_layout
 
 \end_body
