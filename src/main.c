@@ -22,10 +22,11 @@ int main(void) {
 	db_save_product(b);
 
 	//Initialize server
-	//Initialize client?
+	// Initialize client?
 	show_product("pen");
 	remove_product("pen");
 	add_product("rubber",70);
+	deposit_product("rubber",80);
 
 /*	testAns = db_get_product_by_name("pen", &c);
 	if (testAns == OK){

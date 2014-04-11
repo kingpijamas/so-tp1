@@ -60,6 +60,7 @@ void unlock_and_close(int fd, struct flock * fl){
 }
 
 //REVISAR... VALE LA PENA LOCKEAR? ALGUIN PUEDE ENTRAR?
+//DEBERIA ESTAR EN EL MEDIO DE __WRITE_NEW
  db_ret_code dbx_save_product(Product product){
  	int db_ret_code;
 	int fd;
@@ -76,9 +77,24 @@ void unlock_and_close(int fd, struct flock * fl){
 	unlock_and_close(fd, &fl);
 
 	return db_ret_code;
- };//write_mode
+ };
 
- db_ret_code dbx_update_product(Product product);//write_mode
+ db_ret_code dbx_update_product(Product product){
+ 	int db_ret_code;
+	int fd;
+
+	struct flock fl=init_flock();
+	fl.l_pid=getpid();
+	dbx_change_lock(&fl,WRITE_MODE);
+
+	fd=open_and_lock(product.name, &fl);
+
+	db_ret_code=db_update_product(product);
+
+	unlock_and_close(fd, &fl);
+
+	return db_ret_code;
+ };
 
  db_ret_code dbx_delete_product(char * name){
  	int db_ret_code;

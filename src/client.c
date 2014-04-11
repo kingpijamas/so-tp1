@@ -30,7 +30,12 @@ void remove_product(char * prodname){
 
 // adds 'quantity' products with name == prodname
 void deposit_product(char * prodname, int quantity){
-// db_ret_code db_update_product(Product product);
+	Product product;
+	product_init(&product);
+	product.name=prodname;
+	product.quantity=quantity;
+
+	dbx_update_product(product);
 }
 
 // removes 'quantity' products with name == prodname - the opposite of deposit_product
