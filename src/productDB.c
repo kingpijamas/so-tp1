@@ -52,7 +52,7 @@ db_ret_code db_save_product(Product product) {
 
 db_ret_code db_get_product_by_name(char * name, Product * productp) {
 	Product rdProduct;
-	rdProduct.name=malloc(MAX_NAME_DB);
+	rdProduct.name=malloc(MAX_NAME);
 	if (!init) {
 		return DB_NOT_INITIALIZED;
 	}

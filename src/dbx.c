@@ -60,7 +60,7 @@ void unlock_and_close(int fd, struct flock * fl){
 }
 
 void product_init(Product * prod){
-	(*prod).name=malloc(MAX_NAME_DB);
+	(*prod).name=malloc(MAX_NAME);
 }
 
  db_ret_code dbx_save_product(Product product);//write_mode
@@ -81,7 +81,7 @@ void product_init(Product * prod){
 	unlock_and_close(fd, &fl);
 
 	return db_ret_code;
- }; //write_mode
+ };
 
  db_ret_code dbx_get_product_by_name(char * name, Product * product){
 	int db_ret_code;
