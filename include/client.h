@@ -13,7 +13,7 @@ void add_product(char * prodname, int quantity);
 // removes a product from the stock altogether - the opposite of add_product
 void remove_product(char * prodname);
 
-// Updates product to new quantity with name == prodname
+// Adds 'quantity' to product with name == prodname
 void deposit_product(char * prodname, int quantity);
 // removes 'quantity' products with name == prodname - the opposite of deposit_product
 void take_product(char * prodname, int quantity);
