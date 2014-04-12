@@ -5,7 +5,7 @@
 #define ERROR -1
 
 typedef enum { false,true } boolean;
-
 typedef char * string;
+typedef int fdesc;
 
 #endif
