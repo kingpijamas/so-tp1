@@ -257,7 +257,7 @@ status open
 \begin_inset space \qquad{}
 \end_inset
 
-void show_product(char * prodname);
+void show_product(string prodname);
 \end_layout
 
 \begin_layout Plain Layout
@@ -271,7 +271,7 @@ void show_product(char * prodname);
 \begin_inset space \qquad{}
 \end_inset
 
-void add_product(char * prodname, int quantity);
+void add_product(string prodname, int quantity);
 \end_layout
 
 \begin_layout Plain Layout
@@ -285,7 +285,7 @@ void add_product(char * prodname, int quantity);
 \begin_inset space \qquad{}
 \end_inset
 
-void remove_product(char * prodname);
+void remove_product(string prodname);
 \begin_inset VSpace smallskip
 \end_inset
 
@@ -296,7 +296,7 @@ void remove_product(char * prodname);
 \begin_inset space \qquad{}
 \end_inset
 
-void deposit_product(char * prodname, int quantity);
+void deposit_product(string prodname, int quantity);
 \begin_inset VSpace smallskip
 \end_inset
 
@@ -307,7 +307,7 @@ void deposit_product(char * prodname, int quantity);
 \begin_inset space \qquad{}
 \end_inset
 
-void take_product(char * prodname, int quantity); 
+void take_product(string prodname, int quantity); 
 \begin_inset VSpace smallskip
 \end_inset
 
@@ -564,7 +564,7 @@ db_ret_code db_save_product(Product product);
 \begin_inset space \qquad{}
 \end_inset
 
-db_ret_code db_get_product_by_name(char * name, Product * productp);
+db_ret_code db_get_product_by_name(string name, Product * productp);
 \end_layout
 
 \begin_layout Plain Layout
@@ -592,7 +592,7 @@ db_ret_code db_update_product(Product product);
 \begin_inset space \qquad{}
 \end_inset
 
-db_ret_code db_delete_product(char * name);
+db_ret_code db_delete_product(string name);
 \end_layout
 
 \begin_layout Plain Layout
@@ -654,7 +654,7 @@ db_ret_code dbx_save_product(Product product);
 \begin_inset space \qquad{}
 \end_inset
 
-db_ret_code dbx_get_product_by_name(char * name, Product * productp);
+db_ret_code dbx_get_product_by_name(string name, Product * productp);
 \end_layout
 
 \begin_layout Plain Layout
@@ -682,7 +682,7 @@ db_ret_code dbx_update_product(Product product);
 \begin_inset space \qquad{}
 \end_inset
 
-db_ret_code dbx_delete_product(char * name);
+db_ret_code dbx_delete_product(string name);
 \end_layout
 
 \begin_layout Plain Layout

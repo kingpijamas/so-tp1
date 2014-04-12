@@ -6,20 +6,20 @@
 #include "../../include/client.h"
 
 int main(void) {
-	int testAns;
+	// int testAns;
 
-	Product a,b,c;
+	// Product a,b,c;
 
-	a.name = "pen";
-	a.quantity = 100;
+	// a.name = "pen";
+	// a.quantity = 100;
 
-	b.name = "stapler";
-	b.quantity = 500;
+	// b.name = "stapler";
+	// b.quantity = 500;
 
-	db_init();
+	// db_init();
 
-	db_save_product(a);
-	db_save_product(b);
+	// db_save_product(a);
+	// db_save_product(b);
 
 	//Initialize server
 	// Initialize client?
