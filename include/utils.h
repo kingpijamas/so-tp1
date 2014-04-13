@@ -10,6 +10,7 @@
 #define conststrlen(s) (sizeof(s))
 
 
-#define streq(str1,str2) (strcmp(str1,str2) == 0)
+#define streq(str1, str2) (strcmp(str1, str2) == 0)
+#define strneq(str1, str2, n) (strncmp(str1, str2, n) == 0)
 
 #endif
