@@ -10,6 +10,7 @@ void show_product(string prodname);
 
 // adds a new product to the stock - this is used as an initialization method
 void add_product(string prodname, int quantity);
+
 // removes a product from the stock altogether - the opposite of add_product
 void remove_product(string prodname);
 

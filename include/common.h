@@ -8,4 +8,6 @@ typedef enum { false,true } boolean;
 
 typedef char * string;
 
+void fatal(char *s);
+
 #endif
