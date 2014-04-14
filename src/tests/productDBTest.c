@@ -5,7 +5,7 @@
 #include "../../include/model.h"
 #include "../../include/client.h"
 
-// int main(void) {
+int main(void) {
 	// int testAns;
 
 	// Product a,b,c;
@@ -73,5 +73,5 @@
 	// }
 	// printf("All tests passed\n");
 
-// 	return 0;
-// }
+	return 0;
+}

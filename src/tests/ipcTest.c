@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include "../../include/common.h"
 #include "../../include/utils.h"
-#include "../ipcs/fifo.h"
+#include "../../include/communicator.h"
 
 #define SRV 0
 #define CLT 1

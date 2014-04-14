@@ -1,8 +1,18 @@
 CC = gcc
 SRC = src
-#MODE = 
-FILES = $(shell find $(SRC) -name '*.c') 
-#$(shell find $(MODE) -name '*.c')
+
+MODEL = $(SRC)/model
+DB = $(SRC)/db
+CLIENT = $(SRC)/client
+IPCS = $(SRC)/ipcs
+MAIN = $(SRC)/$(RUN)
+
+RUN = tests/ipcTest.c
+IPC = fifo.c
+
+DIRS = $(MODEL) $(DB) $(CLIENT)
+FILES = $(shell find $(DIRS) -name '*.c') $(IPCS)/$(IPC) $(MAIN)
+
 OUT_EXE = tp
 COPTS = -Wall -g
 

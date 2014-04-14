@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "../include/client.h"
-#include "../include/productDBX.h"
+#include "../../include/client.h"
+#include "../../include/productDBX.h"
 
 // displays available data for product of name == prodname
 void show_product(string prodname){

@@ -1,4 +1,4 @@
-#include "../include/model.h"
+#include "../../include/model.h"
 #include <stdlib.h>
 
 void product_init(Product * product){

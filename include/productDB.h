@@ -4,7 +4,7 @@
 #include "common.h"
 #include "model.h"
 
-#define DB_ROOT_PATH "db"
+#define DB_ROOT_PATH "so-db"
 #define TABLE_NAME "product"
 
 #define TABLE_PATH	DB_ROOT_PATH"/"TABLE_NAME
