@@ -63,8 +63,8 @@ int main(int argc, char **argv) {
 			while ( messages[i]!=NULL ) {
 				printf("Parent: about to read\n");
 				ipc_recv(SRV, buf, strlen(messages[i]));
-				printf("Parent: read (\"%.*s\")\n", strlen(messages[i]), buf);
-				if (streq(messages[i], buf)) {
+				printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", strlen(messages[i]), buf, messages[i]);
+				if (strneq(messages[i], buf, strlen(messages[i]))) {
 					printf("Parent: [OK]\n");
 					ipc_send(SRV, CLT, OK_MSG, SRV_RESP_LEN);
 				} else {
