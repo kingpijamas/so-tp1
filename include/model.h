@@ -5,11 +5,14 @@
 
 #define PRODUCT_MAX_NAME_LEN 1000
 
+typedef char product_name[PRODUCT_MAX_NAME_LEN];
+
 typedef struct {
-	string name;
+	product_name name;
 	int quantity;
 } Product;
 
-void product_init(Product * product);
+Product product_new(product_name name, int quantity);
+void product_set_name(Product * product, product_name name);
 
 #endif

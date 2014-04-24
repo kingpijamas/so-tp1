@@ -44,8 +44,6 @@ db_ret_code dbx_get_product_by_name(string name, Product * product){
 	flock fl=__init_flock();
 
 	fl.l_pid=getpid();
-	
-	product_init(&dbxprod);
 
 	fd=__open_and_lock(name, &fl);
 

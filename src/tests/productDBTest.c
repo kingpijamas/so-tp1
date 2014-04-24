@@ -6,6 +6,11 @@
 #include "../../include/client.h"
 
 int main(void) {
+	product_name name = "asdasdss";
+	Product product;
+	
+	product = product_new(name, 0);
+
 	// int testAns;
 
 	// Product a,b,c;

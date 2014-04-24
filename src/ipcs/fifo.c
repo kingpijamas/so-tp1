@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include "../../include/utils.h"
+#include "../../include/rdwrn.h"
 #include "../../include/common.h"
 
 #define FIFO_IPC_NAME(from,to) "("from"->"to")"
@@ -32,7 +33,7 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 			break;
 	}
 	printf("Writing to %s from id: %d\n", ipc_name, from_id);
-	return write(__connect(ipc_name, O_WRONLY), buf, len);
+	return writen(__connect(ipc_name, O_WRONLY), buf, len);
 }
 
 int ipc_recv(int from_id, void * buf, int len) {
@@ -46,7 +47,7 @@ int ipc_recv(int from_id, void * buf, int len) {
 			break;
 	}
 	printf("Reading from %s from id: %d\n", ipc_name, from_id);
-	return read(__connect(ipc_name, O_RDONLY), buf, len);
+	return readn(__connect(ipc_name, O_RDONLY), buf, len);
 }
 
 int ipc_close(int from_id) {

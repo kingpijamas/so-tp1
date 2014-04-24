@@ -22,8 +22,8 @@ typedef enum {
 
 db_ret_code db_init();
 db_ret_code db_save_product(Product product);
-db_ret_code db_get_product_by_name(string name, Product * productp);
+db_ret_code db_get_product_by_name(product_name name, Product * productp);
 db_ret_code db_update_product(Product product);
-db_ret_code db_delete_product(string name);
+db_ret_code db_delete_product(product_name name);
 
 #endif
