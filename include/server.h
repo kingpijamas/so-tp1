@@ -2,7 +2,7 @@
 #define _SERVER_
 
 #include "common.h"
-#include "model.h"
+#include "product.h"
 #include "communicator.h"
 #include "productDB.h"
 

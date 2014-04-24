@@ -2,7 +2,7 @@
 #define _PRODUCT_DB_
 
 #include "common.h"
-#include "model.h"
+#include "product.h"
 
 #define DB_ROOT_PATH "so-db"
 #define TABLE_NAME "product"

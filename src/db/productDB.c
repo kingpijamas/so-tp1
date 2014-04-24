@@ -80,7 +80,7 @@ db_ret_code db_update_product(Product product) {
 		case NO_PRODUCT_FOR_NAME:
 			return NO_PRODUCT_FOR_NAME;
 		case OK:
-			product.quantity=product.quantity+originalProduct.quantity;
+			product_set_quantity(&product, product.quantity+originalProduct.quantity);
 			__write_new(product);
 			return OK;
 		default:

@@ -2,7 +2,7 @@
 #define _CLIENT_
 
 #include "common.h"
-#include "model.h"
+#include "product.h"
 #include "communicator.h"
 
 // displays available data for product of name == prodname

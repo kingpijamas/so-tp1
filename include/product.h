@@ -1,5 +1,5 @@
-#ifndef _MODEL_
-#define _MODEL_
+#ifndef _PRODUCT_
+#define _PRODUCT_
 
 #include "common.h"
 
@@ -14,5 +14,6 @@ typedef struct {
 
 Product product_new(product_name name, int quantity);
 void product_set_name(Product * product, product_name name);
+void product_set_quantity(Product * product, int quantity);
 
 #endif
