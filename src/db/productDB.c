@@ -61,11 +61,10 @@ db_ret_code db_get_product_by_name(product_name name, Product * productp) {
 	if (file == NULL) {
 		return NO_PRODUCT_FOR_NAME;
 	}
-	rdProduct.name = name;
+	product_set_name(&rdProduct, name);
 	while(fscanf(file,"%d\n", &((rdProduct).quantity)) != EOF) {;}
 	fclose(file);
-	productp->name=rdProduct.name;
-	productp->quantity=rdProduct.quantity;
+	*productp = rdProduct;
 	return OK;
 }
 

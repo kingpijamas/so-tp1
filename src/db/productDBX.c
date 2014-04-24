@@ -50,8 +50,7 @@ db_ret_code dbx_get_product_by_name(string name, Product * product){
 	//Asks the DB
 	dbRet=db_get_product_by_name("pen",&dbxprod);
 
-	product->name=dbxprod.name;
-	product->quantity=dbxprod.quantity;
+	*product = dbxprod;
 
 	__unlock_and_close(fd, &fl);
 
