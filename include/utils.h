@@ -2,6 +2,7 @@
 #define _UTILS_
 
 #include <string.h>
+#define min(x,y) (x<y? x:y)
 
 //NOTE: this would be the maximum strlen needed to store an int! (not counting \0s)
 #define MAX_INT_STRLEN (sizeof(int)/sizeof(char))
