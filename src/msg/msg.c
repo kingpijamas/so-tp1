@@ -3,37 +3,43 @@
 #include <string.h>
 #include "../../include/msg.h"
 
-msg_ret_code __serialize_msg(msg_type type, void * attr, int attr_type_size void * buf);
+msg_ret_code __serialize_msg(int from_id, msg_type type, void * attr, int attr_type_size void * buf);
+msg_ret_code __serialize_resp(msg_type type, void * attr, int attr_type_size void * buf);
 
-msg_ret_code msg_serialize_product_name_msg(product_name_msg msg, void * buf) {
+
+msg_ret_code msg_serialize_product_name_msg(int from_id, product_name_msg msg, void * buf) {
 	//validar tipo
-	return __serialize_msg(&msg.name, sizeof(product_name), buf);
+	return __serialize_msg(from_id, &msg.name, sizeof(product_name), buf);
 }
 
-msg_ret_code msg_serialize_product_msg(product_msg msg, void * buf) {
+msg_ret_code msg_serialize_product_msg(int from_id, product_msg msg, void * buf) {
 	//validar tipo
-	return __serialize_msg(&msg.product, sizeof(product_name), buf);
+	return __serialize_msg(from_id, &msg.product, sizeof(product_name), buf);
 }
 
 msg_ret_code msg_serialize_product_resp(product_resp resp, void * buf) {
 	//validar tipo
-	return msg_serialize_product_msg(resp, buf);
+	return __serialize_resp(&resp.product, buf);
 }
 
 msg_ret_code msg_serialize_error_resp(error_resp msg, void * buf) {
 	//validar tipo
-	return __serialize(&msg.product, sizeof(int), buf);
+	return __serialize_resp(&msg.product, sizeof(int), buf);
 }
 
-product_msg msg_product_msg_new(msg_type type, Product product) {
+product_msg msg_product_msg_new(int from_id, msg_type type, Product product) {
 	product_msg msg;
+	msg.from_id = from_id;
 	msg.type = type;
 	msg.product = product;
-	return msg_product_msg_new(type, msg);
+	return msg;
 }
 
 product_resp msg_product_resp_new(msg_type type, Product product) {
-	return msg_product_msg_new(type, product);
+	product_resp resp;
+	resp.type = type;
+	resp.product = product;
+	return resp;
 }
 
 error_resp msg_error_resp_new(msg_type type, int code) {
@@ -44,7 +50,8 @@ error_resp msg_error_resp_new(msg_type type, int code) {
 }
 
 msg_ret_code msg_deserialize_msg_type(void * buf, msg_type * type) {
-	*type = ((msg_type *) buf)[0];
+	*type = ((int *) buf)[0];
+	*type = ((msg_type *) (buf+sizeof(int)))[0];
 	//memcpy(buf, type, sizeof(msg_type));
 	switch(*type) {
 		case GET_PRODUCT:
@@ -82,7 +89,14 @@ msg_ret_code msg_deserialize_error_resp(void * buf, error_resp * resp) {
 	return OK;
 }
 
-msg_ret_code __serialize_msg(msg_type type, void * attr, int attr_type_size void * buf) {
+msg_ret_code __serialize_msg(int from_id, msg_type type, void * attr, int attr_type_size void * buf) {
+	memcpy(from_id, buf, sizeof(int));
+	memcpy(type, buf+sizeof(int), sizeof(msg_type));
+	memcpy(attr, buf+sizeof(msg_type), attr_type_size);
+	return OK;
+}
+
+msg_ret_code __serialize_resp(msg_type type, void * attr, int attr_type_size void * buf) {
 	memcpy(type, buf, sizeof(msg_type));
 	memcpy(attr, buf+sizeof(msg_type), attr_type_size);
 	return OK;

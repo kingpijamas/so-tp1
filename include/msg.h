@@ -4,6 +4,8 @@
 #include "common.h"
 #include "product.h"
 
+#define MAX_MSG_LENGTH 200
+
 typedef enum {
 	GET_PRODUCT,
 	WRITE_PRODUCT,
@@ -13,11 +15,13 @@ typedef enum {
 } msg_type;
 
 typedef struct {
+	int from_id;
 	msg_type type;
 	product_name name;
 } product_name_msg;
 
 typedef struct {
+	int from_id;
 	msg_type type;
 	Product product;
 } product_msg;
@@ -34,13 +38,12 @@ typedef enum {
 	INVALID_BODY
 } msg_ret_code;
 
-product_msg msg_product_msg_new(msg_type type, Product product);
+product_msg msg_product_msg_new(int from_id, msg_type type, Product product);
 product_resp msg_product_resp_new(msg_type type, Product product);
-
 error_resp msg_error_resp_new(msg_type type, int code);
 
-msg_ret_code msg_serialize_product_name_msg(product_name_msg msg, void * buf);
-msg_ret_code msg_serialize_product_msg(product_msg msg, void * buf);
+msg_ret_code msg_serialize_product_name_msg(int from_id, product_name_msg msg, void * buf);
+msg_ret_code msg_serialize_product_msg(int from_id, product_msg msg, void * buf);
 msg_ret_code msg_serialize_product_resp(product_resp msg, void * buf);
 msg_ret_code msg_serialize_error_resp(error_resp resp, void * buf);
 
