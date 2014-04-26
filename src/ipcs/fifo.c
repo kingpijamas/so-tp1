@@ -23,6 +23,7 @@ int ipc_init(int from_id) {
 }
 
 int ipc_send(int from_id, int to_id, void * buf, int len) {
+	//bloquearse si ya hay un ipc funcionando
 	string ipc_name;
 	switch(from_id) {
 		case 0: //I'm the server
@@ -37,6 +38,7 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 }
 
 int ipc_recv(int from_id, void * buf, int len) {
+	//bloquearse si ya hay un ipc funcionando
 	string ipc_name;
 	switch(from_id) {
 		case 0: //I'm the server

@@ -14,5 +14,6 @@
 #define strneq(str1, str2, n) (strncmp(str1, str2, n) == 0)
 
 #define min(x,y) (x<y? x:y)
+#define max(x,y) (x>y? x:y)
 
 #endif

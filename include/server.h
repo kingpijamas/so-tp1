@@ -5,15 +5,11 @@
 #include "product.h"
 #include "communicator.h"
 #include "productDB.h"
+#include "msg.h"
 
 typedef enum { 
 	INVALID_MSG = OK+1,
-	RESOURCE_BUSY,
-	ILLEGAL_PRODUCT_NAME,
-	UNEXPECTED_DB_ERROR
 } srv_ret_code;
-
-
 
 srv_ret_code srv_start();
 srv_ret_code srv_get_product(int fromid, void * msg, int msglen);
