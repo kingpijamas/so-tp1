@@ -13,5 +13,6 @@
 #define streq(str1, str2) (strcmp(str1, str2) == 0)
 #define strneq(str1, str2, n) (strncmp(str1, str2, n) == 0)
 
+#define min(x,y) (x<y? x:y)
 
 #endif

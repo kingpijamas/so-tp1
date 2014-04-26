@@ -12,7 +12,7 @@ RUN = $(MAIN)/$(MAIN_FILE)
 MAIN_FILE = tests/ipcTest.c
 IPC = fifo.c
 
-DIRS = $(MODEL) $(DB) $(CLIENT) $(UTILS)
+DIRS = $(MODEL) $(DB) $(CLIENT) $(UTILS) src/msg/msg.c
 FILES = $(shell find $(DIRS) -name '*.c') $(IPCS)/$(IPC) $(RUN)
 
 OUT_EXE = tp
