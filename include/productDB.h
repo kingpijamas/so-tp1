@@ -1,14 +1,14 @@
 #ifndef _PRODUCT_DB_
 #define _PRODUCT_DB_
 
-#include "common.h"
-#include "model.h"
-
 #define DB_ROOT_PATH "db"
 #define TABLE_NAME "product"
 
 #define TABLE_PATH	DB_ROOT_PATH"/"TABLE_NAME
 #define BUFFER_SIZE 100
+#include "common.h"
+#include "model.h"
+#include "productDBX.h" /* flock definition */
 
 typedef enum {
 	DB_NOT_INITIALIZED = OK+1,
@@ -20,7 +20,7 @@ typedef enum {
 	UNEXPECTED_UPDATE_ERROR
 } db_ret_code;
 
-db_ret_code db_init();
+db_ret_code db_init(boolean server);
 db_ret_code db_save_product(Product product);
 db_ret_code db_get_product_by_name(string name, Product * productp);
 db_ret_code db_update_product(Product product);

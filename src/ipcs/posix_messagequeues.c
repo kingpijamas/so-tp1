@@ -1,4 +1,6 @@
 #include "posix_messagequeues.h"
+// TODO: Change names to use it for server AND client. Think about it. 
+// TODO: And then test, obviously.
 
 MsgQueuePackage * newMsgQueuePackage(int id, char * data);
 
@@ -40,7 +42,7 @@ int ipc_recv(void * buf, int len, int toId){
 	attr.mq_maxmsg = MAX_MSG;
 	attr.mq_msgsize = len;
 	
-	sprintf(cltname, "/client_%ld_queue", toId);
+	sprintf(cltname, "/%ld_queue", toId);
 	if((mqdIn=mq_open(&cltname, cltFlg, mode, &mq_attr))==ERROR){
 		fatal("Error opening msgq in queue descriptor for client");
 	}

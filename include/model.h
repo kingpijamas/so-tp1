@@ -1,9 +1,7 @@
 #ifndef _MODEL_
 #define _MODEL_
-
-#include "common.h"
-
 #define PRODUCT_MAX_NAME_LEN 1000
+#include "common.h"
 
 typedef struct {
 	string name;

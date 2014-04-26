@@ -1,4 +1,3 @@
-#include "../../include/productDB.h"
 #include <unistd.h>
 #include <sys/stat.h>
 #include <string.h>
@@ -6,6 +5,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <stdio.h> // for perror and remove
+#include <unistd.h>
+#include "../../include/productDB.h"
 
 static void __write_new(Product product);
 static FILE * __open(string name, const string mode);
@@ -13,12 +14,13 @@ static string __get_path_to_tuple(string name);
 
 static boolean init = false;
 static char buf[BUFFER_SIZE];
+static boolean is_server=true;
 
-
-db_ret_code db_init() {
+db_ret_code db_init(boolean server) {
 	if (init) { // maybe print that it was initialized several times, but it's entirely not critical
 		return OK;
 	}
+	is_server=server;
 	// read/write/search permissions for owner and group, and with read/search permissions for others
 	if (mkdir(DB_ROOT_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1
 		&& errno != EEXIST) {
@@ -37,7 +39,6 @@ db_ret_code db_save_product(Product product) {
 	if (!init) {
 		return DB_NOT_INITIALIZED;
 	}
-
 	getVal = db_get_product_by_name(product.name, &product);
 	switch (getVal) {
 		case OK:
@@ -111,6 +112,12 @@ db_ret_code db_delete_product(string name) {
 
 void __write_new(Product product) {
 	FILE * file = __open(product.name, "w");
+	if(!is_server){
+		flock fl=__init_flock();
+		fl.l_pid=getpid();
+		__change_lock(&fl,WRITE_MODE);
+		__lock(product.name,&fl,fileno(file));
+	}
 	fprintf(file, "%d\n", product.quantity);
 	fclose(file);
 }
