@@ -1,7 +1,7 @@
-#include server.h 
+#include "../../include/server.h"
 
-#define SRV_ID 0
-#define BUFFER_SIZE MAX_MSG_LENGTH
+#include <stdio.h>
+#include <unistd.h>
 
 static void __handle_get_product(int client_id);
 static void __handle_write_product(int client_id);
@@ -11,9 +11,9 @@ static void __recv(void * buf, int len);
 static void __send(int to_id, void * buf, int len);
 static void __assert(int ret_status);
 
-static void buf[BUFFER_SIZE];
+static char buf[MAX_MSG_LENGTH];
 
-void srv_start() {
+srv_ret_code srv_start() { //TODO: signal()!
 	int from_id;
 	msg_type type;
 
@@ -39,10 +39,11 @@ void srv_start() {
 				break;
 		}
 	}
+	return OK;
 }
 
 srv_ret_code srv_get_product(product_name name, Product * productp) {
-	return db_get_product_by_name(name, productp));
+	return db_get_product_by_name(name, productp);
 }
 
 srv_ret_code srv_write_product(Product product) {
@@ -54,55 +55,67 @@ srv_ret_code srv_write_product(Product product) {
 }
 
 srv_ret_code srv_remove_product(product_name name) {
-	return db_delete_product();
+	return db_delete_product(name);
 }
 
 void __handle_get_product(int client_id) {
+	int ret;
 	product_name_msg msg;
 	Product product;
-	void resp[sizeof(product_resp)]; //maybe buffer could be used here
+	char resp[sizeof(product_resp)]; //maybe buffer could be used here
 
 	__recv(&buf, sizeof(msg) - sizeof(msg_type));
 
 	if ((ret = msg_deserialize_product_name_msg(buf, &msg)) == OK 
 		&& (ret = srv_get_product(msg.name, &product)) == OK) {
-		__send(client_id, msg_serialize_product_resp(msg_product_msg_new(type, product), resp), sizeof(product_resp));
+		msg_serialize_product_resp(msg_product_resp_new(OK_RESP, product), resp);
+		__send(client_id, (void *) resp, sizeof(product_resp));
 	} else {
-		__send(client_id, msg_error_resp_new(ERR_RESP, ret), sizeof(error_resp));
+		msg_serialize_error_resp(msg_error_resp_new(ERR_RESP, ret), resp);
+		__send(client_id, resp, sizeof(error_resp));
 	}
 }
 
 void __handle_write_product(int client_id) {
+	int ret;
 	product_msg msg;
 	Product product;
-	void resp[sizeof(error_resp)]; //maybe buffer could be used here
+	char resp[sizeof(error_resp)]; //maybe buffer could be used here
 
 	__recv(&buf, sizeof(product_msg) - sizeof(msg_type) - sizeof(int));
 
 	if ((ret = msg_deserialize_product_msg(buf, &msg)) == OK 
 		&& (ret = srv_write_product(product)) == OK) {
-		__send(client_id, msg_error_resp_new(OK_RESP, ret), sizeof(error_resp));
+		msg_serialize_error_resp(msg_error_resp_new(OK_RESP, ret), resp);
+		__send(client_id, (void *) resp, sizeof(error_resp));
 	} else {
-		__send(client_id, msg_error_resp_new(ERR_RESP, ret), sizeof(error_resp));
+		msg_serialize_error_resp(msg_error_resp_new(ERR_RESP, ret), resp);
+		__send(client_id, (void *) resp, sizeof(error_resp));
 	}
 }
 
 void __handle_remove_product(int client_id) {
+	int ret;
 	product_name_msg msg;
-	void resp[sizeof(error_resp)]; //maybe buffer could be used here
+	char resp[sizeof(error_resp)]; //maybe buffer could be used here
 
 	__recv(&buf, sizeof(product_name_msg) - sizeof(msg_type) - sizeof(int));
 
 	if ((ret = msg_deserialize_product_name_msg(buf, &msg)) == OK 
 		&& (ret = srv_remove_product(msg.name)) == OK) {
-		__send(client_id, msg_error_resp_new(OK_RESP, ret), sizeof(error_resp));
+		msg_serialize_error_resp(msg_error_resp_new(OK_RESP, ret), resp);
+		__send(client_id, (void *) resp, sizeof(error_resp));
 	} else {
-		__send(client_id, msg_error_resp_new(ERR_RESP, ret), sizeof(error_resp));
+		msg_serialize_error_resp(msg_error_resp_new(ERR_RESP, ret), resp);
+		__send(client_id, (void *) resp, sizeof(error_resp));
 	}
 }
 
 void __handle_invalid_call(int client_id) {
-	__send(client_id, msg_error_resp_new(ERR_RESP, INVALID_MSG), sizeof(error_resp))
+ 	char resp[sizeof(error_resp)]; //maybe buffer could be used here
+
+ 	msg_error_resp_new(ERR_RESP, INVALID_MSG);
+	__send(client_id, (void *) resp, sizeof(error_resp));
 }
 
 void __recv(void * buf, int len) {
@@ -110,12 +123,12 @@ void __recv(void * buf, int len) {
 }
 
 void __send(int to_id, void * buf, int len) {
-	ipc_recv(SRV_ID, to_id, buf, len);	
+	ipc_send(SRV_ID, to_id, buf, len);	
 }
 
 void __assert(int ret_status) { //TODO: check
 	if (ret_status != OK) {
 		printf("Failed (%d)\n", ret_status);
-		exit(1);
+		//exit(1);
 	}
 }

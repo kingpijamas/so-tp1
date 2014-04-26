@@ -31,7 +31,7 @@ typedef struct {
 	int code;
 } error_resp;
 
-typedef product_name_msg product_resp;
+typedef product_msg product_resp;
 
 typedef enum {
 	INVALID_METHOD = OK+1,
@@ -48,7 +48,7 @@ msg_ret_code msg_serialize_product_resp(product_resp msg, void * buf);
 msg_ret_code msg_serialize_error_resp(error_resp resp, void * buf);
 
 msg_ret_code msg_deserialize_msg_type(void * buf, msg_type * type);
-msg_ret_code msg_deserialize_product_name_msg(void * buf, product_msg * msg);
+msg_ret_code msg_deserialize_product_name_msg(void * buf, product_name_msg * msg);
 msg_ret_code msg_deserialize_product_msg(void * buf, product_msg * msg);
 msg_ret_code msg_deserialize_product_resp(void * buf, product_resp * resp);
 msg_ret_code msg_deserialize_error_resp(void * buf, error_resp * resp);
