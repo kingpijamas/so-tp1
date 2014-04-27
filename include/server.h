@@ -13,7 +13,7 @@ typedef enum {
 	INVALID_MSG = OK+1,
 } srv_ret_code;
 
-srv_ret_code srv_start();
+void srv_start();
 srv_ret_code srv_get_product(product_name name, Product * productp);
 srv_ret_code srv_write_product(Product product);
 srv_ret_code srv_remove_product(product_name name);

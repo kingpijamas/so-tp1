@@ -1,24 +1,28 @@
 #include "../../include/server.h"
 #include "../../include/utils.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
 #include <unistd.h>
 
 static void __handle_get_product(int client_id);
 static void __handle_write_product(int client_id);
 static void __handle_remove_product(int client_id);
 static void __handle_invalid_call(int client_id);
+static void __send_err_resp(int client_id, boolean status, int code);
 static void __recv(void * buf, int len);
 static void __send(int to_id, void * buf, int len);
 static void __assert(int ret_status);
-static void __send_err_resp(int client_id, boolean status, int code);
+static void __stop(int x);
 
-srv_ret_code srv_start() { //TODO: signal()!
+void srv_start() { //TODO: signal()!
 	int from_id;
 	msg_type type;
 
 	__assert(ipc_init(SRV_ID));
 	__assert(db_init());
 
+	signal(SIGINT, __stop);
 	while(true) {
 		printf("Srv: Sleeping...\n");
 		usleep(700 * 1000);
@@ -50,8 +54,6 @@ srv_ret_code srv_start() { //TODO: signal()!
 				break;
 		}
 	}
-	//ipc_close(SRV_ID);
-	return OK;
 }
 
 srv_ret_code srv_get_product(product_name name, Product * productp) {
@@ -142,7 +144,15 @@ void __send(int to_id, void * buf, int len) {
 
 void __assert(int ret_status) { //TODO: check
 	if (ret_status != OK) {
-		printf("Failed (%d)\n", ret_status);
-		//exit(1);
+		printf("Srv: Could not start (%d)\n", ret_status);
+		ipc_close(SRV_ID);
+		exit(1);
 	}
+}
+
+void __stop(int x) {
+	printf("Srv: Stopping... (%d)\n", x);
+	ipc_close(SRV_ID);
+	printf("Srv: stopped\n");
+	exit(0);
 }
