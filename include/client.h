@@ -4,6 +4,7 @@
 #include "common.h"
 #include "product.h"
 #include "communicator.h"
+#include "msg.h"
 
 // displays available data for product of name == prodname
 void show_product(product_name name);
