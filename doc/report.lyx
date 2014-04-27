@@ -257,7 +257,7 @@ status open
 \begin_inset space \qquad{}
 \end_inset
 
-void show_product(string prodname);
+void clt_show_product(string prodname);
 \end_layout
 
 \begin_layout Plain Layout
@@ -271,7 +271,7 @@ void show_product(string prodname);
 \begin_inset space \qquad{}
 \end_inset
 
-void add_product(string prodname, int quantity);
+void clt_add_product(string prodname, int quantity);
 \end_layout
 
 \begin_layout Plain Layout
@@ -285,7 +285,7 @@ void add_product(string prodname, int quantity);
 \begin_inset space \qquad{}
 \end_inset
 
-void remove_product(string prodname);
+void clt_remove_product(string prodname);
 \begin_inset VSpace smallskip
 \end_inset
 
@@ -296,7 +296,7 @@ void remove_product(string prodname);
 \begin_inset space \qquad{}
 \end_inset
 
-void deposit_product(string prodname, int quantity);
+void clt_deposit_product(string prodname, int quantity);
 \begin_inset VSpace smallskip
 \end_inset
 
@@ -307,7 +307,7 @@ void deposit_product(string prodname, int quantity);
 \begin_inset space \qquad{}
 \end_inset
 
-void take_product(string prodname, int quantity); 
+void clt_take_product(string prodname, int quantity); 
 \begin_inset VSpace smallskip
 \end_inset
 
@@ -737,7 +737,7 @@ Se decide sustraer un lápiz del depósito
 \begin_layout Enumerate
 Se llama a la función 
 \shape italic
-take_product()
+clt_take_product()
 \shape default
  con el nombre 
 \begin_inset Quotes eld
@@ -783,7 +783,7 @@ Se crea una instancia del servidor que queda iniciada y en espera de una
 \begin_layout Enumerate
 Varios clientes envían diferentes peticiones (por ejemplo, 
 \shape italic
-take_product(...)
+clt_take_product(...)
 \shape default
 ) las cuales llamarán al módulo de comunicación para enviar sus respectivos
  mensajes al servidor.

@@ -15,12 +15,12 @@ int main(void) {
 	db_save_product(a);
 	db_save_product(b);
 
-	//show_product("pen");
-	//remove_product("pen");
+	//clt_show_product("pen");
+	//clt_remove_product("pen");
 	
-	//add_product("rubber",70);
-	//deposit_product("rubber",80);
-	//take_product("rubber",10);
+	//clt_add_product("rubber",70);
+	//clt_deposit_product("rubber",80);
+	//clt_take_product("rubber",10);
 
 	testAns = db_get_product_by_name("pen", &c);
 	if (testAns == OK){
