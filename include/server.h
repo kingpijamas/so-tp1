@@ -10,7 +10,7 @@
 #define SRV_ID 0
 
 typedef enum {
-	INVALID_MSG = OK+1,
+	INVALID_MSG = OK+1
 } srv_ret_code;
 
 void srv_start();

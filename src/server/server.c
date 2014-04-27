@@ -14,6 +14,7 @@ static void __recv(void * buf, int len);
 static void __send(int to_id, void * buf, int len);
 static void __assert(int ret_status);
 static void __stop(int x);
+static void __crash();
 
 void srv_start() { //TODO: signal()!
 	int from_id;
@@ -145,8 +146,7 @@ void __send(int to_id, void * buf, int len) {
 void __assert(int ret_status) { //TODO: check
 	if (ret_status != OK) {
 		printf("Srv: Could not start (%d)\n", ret_status);
-		ipc_close(SRV_ID);
-		exit(1);
+		__crash();
 	}
 }
 
@@ -155,4 +155,9 @@ void __stop(int x) {
 	ipc_close(SRV_ID);
 	printf("Srv: stopped\n");
 	exit(0);
+}
+
+void __crash() {
+	ipc_close(SRV_ID);
+	exit(1);
 }
