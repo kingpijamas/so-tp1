@@ -21,17 +21,24 @@ srv_ret_code srv_start() { //TODO: signal()!
 	__assert(db_init());
 
 	while(true) {
+		printf("Srv: Sleeping...\n");
 		usleep(700 * 1000);
+		printf("Srv: ...Woke up\n");
 		__recv(&from_id, sizeof(int));
+		printf("Srv:\n\t< id = %d ...\n", recv);
 		__recv(&type, sizeof(msg_type));
+		printf("\ttype = %d ", type);
 		switch(type) {
 			case GET_PRODUCT:
+				printf("(GET_PRODUCT) ");
 				__handle_get_product(from_id);
 				break;
 			case WRITE_PRODUCT:
+				printf("(WRITE_PRODUCT) ");
 				__handle_write_product(from_id);
 				break;
 			case REMOVE_PRODUCT:
+				printf("(REMOVE_PRODUCT) ");
 				__handle_remove_product(from_id);
 				break;
 			default:

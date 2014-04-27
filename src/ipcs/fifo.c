@@ -33,7 +33,7 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 			ipc_name = FIFO_IPC_CLT_SRV_FULL_NAME;
 			break;
 	}
-	printf("Writing to %s from id: %d\n", ipc_name, from_id);
+	printf("Writing %d bytes to %s from id: %d\n", len, ipc_name, from_id);
 	return writen(__connect(ipc_name, O_WRONLY), buf, len);
 }
 
@@ -48,7 +48,7 @@ int ipc_recv(int from_id, void * buf, int len) {
 			ipc_name = FIFO_IPC_SRV_CLT_FULL_NAME;
 			break;
 	}
-	printf("Reading from %s from id: %d\n", ipc_name, from_id);
+	printf("Reading %d bytes from %s from id: %d\n", len, ipc_name, from_id);
 	return readn(__connect(ipc_name, O_RDONLY), buf, len);
 }
 
