@@ -19,3 +19,10 @@ void product_set_name(Product * product, product_name name) {
 void product_set_quantity(Product * product, int quantity) {
 	product -> quantity = quantity;
 }
+
+//product_name product_name_new(string str) {
+//	product_name name;
+//	memcpy(name, str, min(sizeof(product_name)-1, strlen(str)));
+//	name[sizeof(product_name)]='\0';
+//	return name;
+//}

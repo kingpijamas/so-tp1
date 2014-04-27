@@ -38,6 +38,7 @@ typedef enum {
 	INVALID_BODY
 } msg_ret_code;
 
+product_name_msg msg_product_name_msg_new(int from_id, msg_type type, product_name name);
 product_msg msg_product_msg_new(int from_id, msg_type type, Product product);
 product_resp msg_product_resp_new(msg_type type, Product product);
 error_resp msg_error_resp_new(msg_type type, int code);

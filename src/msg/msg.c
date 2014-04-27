@@ -6,25 +6,12 @@
 static msg_ret_code __serialize_msg(int from_id, msg_type type, void * attr, int attr_type_size, void * buf);
 static msg_ret_code __serialize_resp(msg_type type, void * attr, int attr_type_size, void * buf);
 
-
-msg_ret_code msg_serialize_product_name_msg(int from_id, product_name_msg msg, void * buf) {
-	//validar tipo
-	return __serialize_msg(from_id, msg.type, &msg.name, sizeof(product_name), buf);
-}
-
-msg_ret_code msg_serialize_product_msg(int from_id, product_msg msg, void * buf) {
-	//validar tipo
-	return __serialize_msg(from_id, msg.type, &msg.product, sizeof(Product), buf);
-}
-
-msg_ret_code msg_serialize_product_resp(product_resp resp, void * buf) {
-	//validar tipo
-	return __serialize_resp(resp.type, &resp.product, sizeof(Product), buf);
-}
-
-msg_ret_code msg_serialize_error_resp(error_resp resp, void * buf) {
-	//validar tipo
-	return __serialize_resp(resp.type, &resp.code, sizeof(int), buf);
+product_name_msg msg_product_name_msg_new(int from_id, msg_type type, product_name name) {
+	product_name_msg msg;
+	msg.from_id = from_id;
+	msg.type = type;
+	memcpy(msg.name, name, sizeof(product_name));
+	return msg;
 }
 
 product_msg msg_product_msg_new(int from_id, msg_type type, Product product) {
@@ -47,6 +34,26 @@ error_resp msg_error_resp_new(msg_type type, int code) {
 	resp.type = type;
 	resp.code = code;
 	return resp;
+}
+
+msg_ret_code msg_serialize_product_name_msg(int from_id, product_name_msg msg, void * buf) {
+	//validar tipo
+	return __serialize_msg(from_id, msg.type, &msg.name, sizeof(product_name), buf);
+}
+
+msg_ret_code msg_serialize_product_msg(int from_id, product_msg msg, void * buf) {
+	//validar tipo
+	return __serialize_msg(from_id, msg.type, &msg.product, sizeof(Product), buf);
+}
+
+msg_ret_code msg_serialize_product_resp(product_resp resp, void * buf) {
+	//validar tipo
+	return __serialize_resp(resp.type, &resp.product, sizeof(Product), buf);
+}
+
+msg_ret_code msg_serialize_error_resp(error_resp resp, void * buf) {
+	//validar tipo
+	return __serialize_resp(resp.type, &resp.code, sizeof(int), buf);
 }
 
 msg_ret_code msg_deserialize_msg_type(void * buf, msg_type * type) {

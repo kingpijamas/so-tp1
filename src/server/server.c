@@ -39,6 +39,7 @@ srv_ret_code srv_start() { //TODO: signal()!
 				break;
 		}
 	}
+	//ipc_close(SRV_ID);
 	return OK;
 }
 
