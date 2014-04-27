@@ -8,19 +8,11 @@
 int main(void) {
 	int testAns;
 
-	Product a = product_new("pen", 100), b = product_new("stapler", 500), c = product_new("rubber", 80);
+	Product a = product_new("pen", 100), b = product_new("stapler", 500), c;
 
 	db_init();
-
-	db_save_product(a);
 	db_save_product(b);
-
-	//show_product("pen");
-	//remove_product("pen");
-	
-	//add_product("rubber",70);
-	//deposit_product("rubber",80);
-	//take_product("rubber",10);
+	db_save_product(a);
 
 	testAns = db_get_product_by_name("pen", &c);
 	if (testAns == OK){

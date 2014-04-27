@@ -20,6 +20,12 @@ typedef enum {
 	UNEXPECTED_UPDATE_ERROR
 } db_ret_code;
 
+typedef enum {
+	READ_MODE, 
+	WRITE_MODE,
+	UNLOCK
+} lock_mode;
+
 db_ret_code db_init();
 db_ret_code db_save_product(Product product);
 db_ret_code db_get_product_by_name(product_name name, Product * productp);

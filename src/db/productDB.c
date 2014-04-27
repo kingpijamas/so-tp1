@@ -25,6 +25,7 @@ static char buf[BUFFER_SIZE];
 static flock __init_flock();
 static void __lock(int fd, flock * flptr);
 static void __unlock(int fd, flock * flptr);
+static int __change_lock(flock * flptr, int lock_mode);
 
 
 db_ret_code db_init() {
@@ -49,7 +50,6 @@ db_ret_code db_save_product(Product product) {
 	if (!init) {
 		return DB_NOT_INITIALIZED;
 	}
-
 	getVal = db_get_product_by_name(product.name, &product);
 	switch (getVal) {
 		case OK:
@@ -84,11 +84,10 @@ db_ret_code db_get_product_by_name(product_name name, Product * productp) {
 	while(fscanf(file,"%d\n", &((rdProduct).quantity)) != EOF) {;}
 
 	__unlock(fd, flptr);
-	close(fd);
+	fclose(file);
 	*productp = rdProduct;
 	return OK;
 }
-
 
 db_ret_code db_update_product(Product product) {
 	int getVal;
@@ -116,10 +115,18 @@ db_ret_code db_delete_product(product_name name) {
 	if (!init) {
 		return DB_NOT_INITIALIZED;
 	}
+	int fd;
+	flock fl=__init_flock();
+	fl.l_pid=getpid();
+	flock * flptr=&fl;
+	FILE * file = __open(name, "w+r");
+	fd=fileno(file);
 
 	getVal = db_get_product_by_name(name, &product);
 	switch (getVal) {
 		case OK:
+			__change_lock(flptr,WRITE_MODE);
+			__lock(fd,flptr);
 			if (remove(__get_path_to_tuple(name)) != 0){
 				return UNEXPECTED_DELETE_ERROR;
 			}
@@ -130,15 +137,16 @@ db_ret_code db_delete_product(product_name name) {
 }
 
 void __write_new(Product product) {
-	// int fd;
-	// flock fl=__init_flock();
-	// fl.l_pid=getpid();
-	// flock * flptr=&fl;
-	FILE * file = __open(product.name, "w");
-	// fd=fileno(file);
-	// __lock(fd,flptr);
+	int fd;
+	flock fl=__init_flock();
+	fl.l_pid=getpid();
+	flock * flptr=&fl;
+	__change_lock(flptr,WRITE_MODE);
+	FILE * file = __open(product.name, "w+r");
+	fd=fileno(file);
+	__lock(fd,flptr);
 	fprintf(file, "%d\n", product.quantity);
-	// __unlock(fd,flptr);
+	__unlock(fd,flptr);
 	fclose(file);
 }
 
@@ -165,15 +173,18 @@ int __change_lock(flock * flptr, int lock_mode){
 	case WRITE_MODE:
 		flptr->l_type=F_WRLCK;
 		return OK;
+	case UNLOCK:
+		flptr->l_type=F_UNLCK;
+		return OK;
 	default:
 		return ERROR;
 	}
 }
 
 void __lock(int fd, flock * flptr){
-	// printf("Press a key to try to get lock: \n");
-	// getchar();
-	// printf("Trying to get lock...\n");
+	printf("Press a key to try to get lock: \n");
+	getchar();
+	printf("Trying to get lock...\n");
 
     //Getting lock. If there is another lock, it will stay here till it's free
 	if(fcntl(fd,F_SETLKW,flptr)==-1){ 
@@ -183,10 +194,13 @@ void __lock(int fd, flock * flptr){
 }
 
 void __unlock(int fd, flock * flptr){
-	flptr->l_type=F_UNLCK; /*set to unlock same region */
+	printf("Press a key to try to unlock: \n");
+	getchar();
+	printf("Trying to get unlock...\n");
+	__change_lock(flptr, UNLOCK);
+	// flptr->l_type=F_UNLCK; /*set to unlock same region */
 	if (fcntl(fd,F_SETLKW, flptr)==-1){ //release the lock
 		perror("fcntrl");
 		exit(1);
 	}
-	close(fd);	
 }
