@@ -27,7 +27,7 @@ static int __write_product(string name, int quantity, boolean expecting_failure)
 
 int main(int argc, char **argv) {
 	boolean failed = false;
-	Product a = product_new("pen", 100), b = product_new("stapler", 500);
+	Product a = product_new("pen", 100)/*, b = product_new("stapler", 500)*/;
 
 	db_init();
 
@@ -84,7 +84,7 @@ boolean __get_product(string name, boolean expecting_failure){
 	char resp_body[sizeof(product_resp)];
 	Product product;
 	
-	msg_serialize_product_name_msg(msg_product_name_msg_new(CLT_ID, GET_PRODUCT, name), toSend);
+	msg_serialize_product_name_msg(CLT_ID, GET_PRODUCT, name, toSend);
 	__send(toSend, sizeof(product_name_msg));
 	__recv(&type, sizeof(msg_type));
 	switch (type) {
@@ -108,7 +108,7 @@ int __remove_product(string name, boolean expecting_failure){
 	char resp_body[sizeof(error_resp)];
 	int code;
 	
-	msg_serialize_product_name_msg(msg_product_name_msg_new(CLT_ID, REMOVE_PRODUCT, name), toSend);
+	msg_serialize_product_name_msg(CLT_ID, REMOVE_PRODUCT, name, toSend);
 	__send(toSend, sizeof(product_name_msg));
 	__recv(&type, sizeof(msg_type));
 	switch (type) {
@@ -132,7 +132,7 @@ int __write_product(string name, int quantity, boolean expecting_failure){
 	char resp_body[sizeof(error_resp)];
 	int code;
 	
-	msg_serialize_product_msg(msg_product_msg_new(CLT_ID, WRITE_PRODUCT, product_new(name, quantity)), toSend);
+	msg_serialize_product_msg(CLT_ID, WRITE_PRODUCT, product_new(name, quantity), toSend);
 	__send(toSend, sizeof(product_msg));
 	__recv(&type, sizeof(msg_type));
 	switch (type) {
