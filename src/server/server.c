@@ -33,17 +33,17 @@ srv_ret_code srv_start() { //TODO: signal()!
 			case GET_PRODUCT:
 				printf("(GET_PRODUCT) ...\n");
 				__handle_get_product(from_id);
-				printf("...\t>\n");
+				printf("Srv:\t... >\n");
 				break;
 			case WRITE_PRODUCT:
 				printf("(WRITE_PRODUCT) ...\n");
 				__handle_write_product(from_id);
-				printf("...\t>\n");
+				printf("Srv:\t... >\n");
 				break;
 			case REMOVE_PRODUCT:
 				printf("(REMOVE_PRODUCT) ...\n");
 				__handle_remove_product(from_id);
-				printf("...\t>\n");
+				printf("Srv:\t... >\n");
 				break;
 			default:
 				__handle_invalid_call(from_id);

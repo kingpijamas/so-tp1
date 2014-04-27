@@ -22,11 +22,12 @@ static void bye(int sig);
 static void __send(void * buf, int len);
 static void __recv(void * buf, int len);
 static boolean __get_product(string name, boolean expecting_failure);
-static int __remove_product(string name, boolean expecting_failure);
-static int __write_product(string name, int quantity, boolean expecting_failure);
+static boolean __remove_product(string name, boolean expecting_failure);
+static boolean __write_product(string name, int quantity, boolean expecting_failure);
+static boolean __handle_not_ok_resp(msg_type type, boolean expecting_failure);
 
 int main(int argc, char **argv) {
-	boolean failed = false;
+	boolean passed;
 	Product a = product_new("pen", 100)/*, b = product_new("stapler", 500)*/;
 
 	db_init();
@@ -39,35 +40,11 @@ int main(int argc, char **argv) {
 			fatal("Fork error");
 			break;
 		case 0: /* child */
-			//printf("Clt: get_product...\n");
-			/*failed = __get_product("pen", false);
-			failed = __get_product("pen", false);
-			failed = __remove_product("pen", false);
-			failed = __get_product("pen", true);
-			*/
-//			failed = __write_product("rubber", 80, false);
-			/*failed = __get_product("rubber", false);
-			failed = __write_product("rubber", 1, false);
-			failed = __get_product("rubber", false);*/
-			//failed = __get_product("rubber", false);
-			//failed = __get_product("rubber", false);
-			//failed = __write_product("glue", 10, false);
-			//failed = __get_product("glue", false);
-//			failed = __remove_product("rubber", false);
-//			failed = __get_product("rubber", true);
-//			failed = __write_product("rubber", 1, false);
-			/*failed = __write_product("rubber", -1, false);
-			failed = __get_product("rubber", false);
-			failed = __remove_product("rubber", false);
-			failed = __get_product("rubber", true);
-			*/
-
-			failed = __write_product("rubber", 80, false);
-			failed = __remove_product("rubber", false);
-			failed = __get_product("rubber", true);
-			failed = __write_product("rubber", 1, false);
-			
-			printf("\n\nAll tests done: %s\n", failed == true? "[FAILED]":"[OK]");
+			passed = __write_product("rubber", 80, false)
+				&& __remove_product("rubber", false)
+				&& __get_product("rubber", true)
+				&& __write_product("rubber", 1, false);
+			printf("\n\nAll tests done: %s\n", !passed? "[FAILED]":"[OK]");
 			ipc_close(INVALID);
 			break;
 		default: /* parent */
@@ -87,22 +64,17 @@ boolean __get_product(string name, boolean expecting_failure){
 	msg_serialize_product_name_msg(CLT_ID, GET_PRODUCT, name, toSend);
 	__send(toSend, sizeof(product_name_msg));
 	__recv(&type, sizeof(msg_type));
-	switch (type) {
-		case OK_RESP:
-			__recv(resp_body, sizeof(Product));
-			msg_deserialize_product(resp_body, &product);
-			printf("Clt: ...Received -- Product: {name: %s, quantity: %d}) -- %s\n", product.name, product.quantity, expecting_failure == true? "[ERROR]":"[OK]");
-			return expecting_failure == true;
-		case ERR_RESP:
-			printf("Clt: ...Received -- %s\n", expecting_failure == true? "[OK] (expected)":"[ERROR]");
-			return expecting_failure == false;
-		default:
-			printf("[ERROR]\n");
-			return true;
+	
+	if (type == OK_RESP) {
+		__recv(resp_body, sizeof(Product));
+		msg_deserialize_product(resp_body, &product);
+		printf("Clt: %s ...Received -- {[OK] - Product: {name: %s, quantity: %d}}\n", !expecting_failure? "[OK]":"[ERROR]", product.name, product.quantity);
+		return !expecting_failure;
 	}
+	return __handle_not_ok_resp(type, expecting_failure);
 }
 
-int __remove_product(string name, boolean expecting_failure){
+boolean __remove_product(string name, boolean expecting_failure){
 	char toSend[sizeof(product_name_msg)];
 	msg_type type;
 	char resp_body[sizeof(error_resp)];
@@ -111,22 +83,17 @@ int __remove_product(string name, boolean expecting_failure){
 	msg_serialize_product_name_msg(CLT_ID, REMOVE_PRODUCT, name, toSend);
 	__send(toSend, sizeof(product_name_msg));
 	__recv(&type, sizeof(msg_type));
-	switch (type) {
-		case OK_RESP:
-			__recv(resp_body, sizeof(int));
-			msg_deserialize_code(resp_body, &code);
-			printf("Clt: ...Received -- { code: %d }) -- %s\n", code, expecting_failure == true? "[ERROR]":"[OK]");
-			return expecting_failure == true;
-		case ERR_RESP:
-			printf("Clt: ...Received -- %s\n", expecting_failure == true? "[OK] (expected)":"[ERROR]");
-			return expecting_failure == false;
-		default:
-			printf("[ERROR]\n");
-			return true;
+	
+	if (type == OK_RESP) {
+		__recv(resp_body, sizeof(int));
+		msg_deserialize_code(resp_body, &code);
+		printf("Clt: %s ...Received -- {[OK] - Code: {%d}}\n", !expecting_failure? "[OK]":"[ERROR]", code);
+		return !expecting_failure;
 	}
+	return __handle_not_ok_resp(type, expecting_failure);
 }
 
-int __write_product(string name, int quantity, boolean expecting_failure){
+boolean __write_product(string name, int quantity, boolean expecting_failure){
 	char toSend[sizeof(product_msg)];
 	msg_type type;
 	char resp_body[sizeof(error_resp)];
@@ -135,18 +102,27 @@ int __write_product(string name, int quantity, boolean expecting_failure){
 	msg_serialize_product_msg(CLT_ID, WRITE_PRODUCT, product_new(name, quantity), toSend);
 	__send(toSend, sizeof(product_msg));
 	__recv(&type, sizeof(msg_type));
-	switch (type) {
-		case OK_RESP:
-			__recv(resp_body, sizeof(int));
-			msg_deserialize_code(resp_body, &code);
-			printf("Clt: ...Received -- { code: %d }) -- %s\n", code, expecting_failure == true? "[ERROR]":"[OK]");
-			return expecting_failure == true;
+	if (type == OK_RESP) {
+		__recv(resp_body, sizeof(int));
+		msg_deserialize_code(resp_body, &code);
+		printf("Clt: %s ...Received -- {[OK] - Code: {%d}}\n", !expecting_failure? "[OK]":"[ERROR]", code);
+		return !expecting_failure;
+	}
+	return __handle_not_ok_resp(type, expecting_failure);
+}
+
+boolean __handle_not_ok_resp(msg_type type, boolean expecting_failure) {
+	char resp_body[sizeof(int)];
+	int code;
+	__recv(resp_body, sizeof(int));
+	msg_deserialize_code(resp_body, &code);
+	switch(type) {
 		case ERR_RESP:
-			printf("Clt: ...Received -- %s\n", expecting_failure == true? "[OK] (expected)":"[ERROR]");
-			return expecting_failure == false;
+			printf("Clt: %s ...Received -- {[ERROR] - Code: {%d}}\n", expecting_failure? "[OK] (expected)":"[ERROR]", code);
+			return expecting_failure;
 		default:
-			printf("[ERROR]\n");
-			return true;
+			printf("Clt: [ERROR] (type: %d)\n", type);
+			return false;
 	}
 }
 
