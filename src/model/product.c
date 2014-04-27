@@ -15,7 +15,7 @@ Product product_new(product_name name, int quantity) {
 // A warning should at least be given (maybe an error?)
 void product_set_name(Product * product, product_name name) {
 	memcpy(product->name, name, min(sizeof(product_name),strlen(name)));
-	product->name[sizeof(product_name)] == '\0';
+	product->name[sizeof(product_name)] = '\0';
 }
 
 //FIXME: validation
