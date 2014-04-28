@@ -7,7 +7,6 @@
 
 int main(void) {
 	int testAns;
-
 	Product a = product_new("pen", 100), b = product_new("stapler", 500), c;
 
 	db_init();
