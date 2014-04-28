@@ -20,8 +20,8 @@ void srv_start() { //TODO: signal()!
 	int from_id;
 	msg_type type;
 
-	__assert(ipc_init(SRV_ID));
 	__assert(db_init());
+	__assert(ipc_init(SRV_ID));
 
 	signal(SIGINT, __stop);
 	while(true) {
