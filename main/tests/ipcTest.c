@@ -33,8 +33,8 @@ int main(int argc, char **argv) {
 	boolean failed = false;
 	string messages[] = {"hello", "world!", NULL};
 
-	ipc_close(INVALID);
-	ipc_init(INVALID);
+	ipc_close(SRV);
+	ipc_init(SRV);
 
 	switch ( fork() ) {
 		case -1:
