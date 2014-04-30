@@ -8,6 +8,7 @@
 #include "../../include/common.h"
 #include "../../include/utils.h"
 #include "../../include/communicator.h"
+#include "../../include/system5_msgqueue.h"
 
 #define SRV 0
 #define CLT 1
@@ -17,10 +18,6 @@
 #define NOT_OK_MSG "NK"
 #define SRV_RESP_LEN 2
 
-void fatal(char *s) {
-	perror(s);
-	exit(1);
-}
 
 void bye(int sig) {
 	printf("Parent received SIGPIPE\n");
@@ -45,7 +42,7 @@ int main(int argc, char **argv) {
 				printf("Child: about to send (\"%s\")\n", messages[i]);
 				ipc_send(CLT, 0, messages[i], strlen(messages[i]));
 				printf("Child: msg sent\n");
-				ipc_recv(CLT, buf, SRV_RESP_LEN);
+				ipc_rcv(CLT, buf, SRV_RESP_LEN);
 				printf("Child: response received (%.*s)\n", SRV_RESP_LEN, buf);
 				failed = !strneq(OK_MSG, buf, SRV_RESP_LEN);
 				if (failed) {
@@ -62,7 +59,7 @@ int main(int argc, char **argv) {
 			signal(SIGPIPE, bye);
 			while ( messages[i]!=NULL ) {
 				printf("Parent: about to read\n");
-				ipc_recv(SRV, buf, strlen(messages[i]));
+				ipc_rcv(SRV, buf, strlen(messages[i]));
 				printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", strlen(messages[i]), buf, messages[i]);
 				if (strneq(messages[i], buf, strlen(messages[i]))) {
 					printf("Parent: [OK]\n");

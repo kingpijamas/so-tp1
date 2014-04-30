@@ -1,4 +1,7 @@
-#include "ipcs/msgQueue.h"
+#include "../../include/system5_msgqueue.h"
+#define TMP_FOLDER "/tmp"
+#include "../../include/communicator.h"
+
 
 typedef struct {
 	long fromId;
@@ -11,8 +14,15 @@ int ipc_get(int id);
 
 MsgQueuePackage *newMsgQueuePackage(int id, char* data);
 
-int ipc_init(int myId, int size) {
-    ipc_close(myId);
+void
+fatal(char *s)
+{
+	perror(s);
+	exit(1);
+}
+
+int ipc_init(int from_id) {
+    ipc_close(from_id);
 	return 0;
 }
 
@@ -23,7 +33,7 @@ int ipc_get(int key) {
 		fatal("Error writing msg - ftok");
 		return -1;
 	}
-	int id = msgget(ipcId, IPC_CREAT | SEM_FLAGS);
+	int id = msgget(ipcId, IPC_CREAT | 0666);
 	if (id < 0) {
 		fatal("Error writing msg - msgget");
 		return -1;
@@ -31,25 +41,25 @@ int ipc_get(int key) {
 	return id;
 }
 
-int ipc_write(int myId, int toId, char *data) {
-	int toIpcId = ipc_get(toId);
-	MsgQueuePackage *msg = newMsgQueuePackage(myId, data);
+int ipc_send(int from_id, int to_id, void * buf, int len) {
+	int toIpcId = ipc_get(to_id);
+	MsgQueuePackage *msg = newMsgQueuePackage(from_id, buf);
 	return msgsnd(toIpcId, (void*) msg, MSG_SIZE, IPC_NOWAIT);
 }
 
-int ipc_read(int myId, int fromId, char *data) {
-	int myIpcId = ipc_get(myId);
+int ipc_rcv(int from_id, void * buf, int len) {
+	int myIpcId = ipc_get(getpid());
 	MsgQueuePackage msg;
-	int result = msgrcv(myIpcId, (void *)&msg, MSG_SIZE, fromId, IPC_NOWAIT);
+	int result = msgrcv(myIpcId, (void *)&msg, MSG_SIZE, from_id, IPC_NOWAIT);
 	if (result == -1) {
 		return -1;
 	}
-	memcpy(data, msg.data, DATA_SIZE);
+	memcpy(buf, msg.data, DATA_SIZE);
 	return result;
 }
 
-int ipc_close(int id) {
-	int ipcId = ipc_get(id);
+int ipc_close(int from_id) {
+	int ipcId = ipc_get(from_id);
 	return msgctl(ipcId, IPC_RMID, (struct msqid_ds *) NULL);
 }
 

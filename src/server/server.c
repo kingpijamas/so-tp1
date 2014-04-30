@@ -1,5 +1,6 @@
 #include "../../include/server.h"
 #include "../../include/utils.h"
+#include "../../include/communicator.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -136,7 +137,7 @@ void __handle_invalid_call(int client_id) {
 }
 
 void __recv(void * buf, int len) {
-	ipc_recv(SRV_ID, buf, len);	
+	ipc_rcv(SRV_ID, buf, len);	
 }
 
 void __send(int to_id, void * buf, int len) {
