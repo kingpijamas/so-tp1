@@ -1,89 +1,124 @@
 #include "../../include/communicator.h"
 #include <string.h>
 #include <sys/shm.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "../../include/common.h"
+#include "../../include/error.h"
 #include "../../include/semaphore.h"
+#include "../../include/rdwrn.h"
 
-#define MEM_KEY ((key_t) 0x111222)
+#define SHM_KEY ((key_t) 0x111222)
+#define SSHM_KEY ((key_t) 0x110E22)
+
 #define SHM_SIZE 500
+#define SSHM_SIZE (sizeof(int))
 
-static void __assert(int res, string error_text);
-static boolean __failed(int res);
-static void __fail(string error_text);
+#define SRV_ID 0
 
-static int shm_id, to_read=0, read=0;
-static char * shm;
+static void __wipe_shm();
+static void __attach_shm();
+
+static int shm_id, sshm_id, to_read = -1;
+static char * shm, * sshm;
+
+typedef enum {
+	READ,
+	WRITE,
+	CONN
+} semaphore;
 
 int ipc_init(int from_id) {
-	__assert(shm_id = shmget(MEM_KEY, SHM_SIZE, IPC_CREAT /*| IPC_EXCL*/ | 0666), "Could not allocate memory");
-	if ((shm = (char*)shmat(shm_id, NULL, 0)) == (void *)-1) {
-		__fail("Could not allocate memory");
+	switch(from_id) {
+	case SRV_ID:
+		assert((shm_id = shmget(SHM_KEY, SHM_SIZE, IPC_CREAT /*| IPC_EXCL*/ | 0666)) != -1, "Could not create shared memory area");
+		assert((sshm_id = shmget(SSHM_KEY, SSHM_SIZE, IPC_CREAT /*| IPC_EXCL*/ | 0666)) != -1, "Could not create shared memory area");
+		__attach_shm();
+		__wipe_shm();
+		semaphore_create(READ);
+		semaphore_create(WRITE);
+		semaphore_create(CONN);
+		return OK;
+	default:
+		return OK; //fail maybe?
 	}
-	memset(shm, '\0', SHM_SIZE);
-	semaphore_create();
-	return OK;
+}
+
+int ipc_connect(int from_id, int to_id) { // should fail when there is no server
+	printf("connection: %d->%d\n", from_id, to_id);
+	switch (from_id) {
+	case SRV_ID:
+		semaphore_let(CONN);
+		return OK; // it's like a listen
+	default:
+		semaphore_stop(CONN);
+		__attach_shm();
+		return OK;
+	}
 }
 
 int ipc_send(int from_id, int to_id, void * buf, int len) {
-	semaphore_up();
-	memcpy(shm, &len, sizeof(int));
-	memcpy(shm+sizeof(int), buf, len);
-	printf("wrote: %d\n", ((int *)shm)[0]);
-	printf("%s: Writing %d bytes to %s\n", from_id==0? "Srv":"Clt", len, to_id==0? "Srv":"Clt");
+	semaphore_stop(READ);
+	//semaphore_stop(WRITE);
+
+	memcpy(sshm, &len, sizeof(int));
+	memcpy(shm, buf, len);
+
+	//semaphore_let(WRITE);
+	semaphore_let(READ);
 	return len;
 }
 
 int ipc_recv(int from_id, void * buf, int len) {
-	//int aux;
-	printf("%s: Reading %d bytes\n", from_id==0? "Srv":"Clt", len);
-	if (to_read - read < 0) {
-		__fail("Negative amount to read");
+	semaphore_stop(WRITE);
+	//semaphore_stop(READ);
+
+	if (to_read == -1) {
+		memcpy(&to_read, sshm, SSHM_SIZE);
 	}
-	if (to_read == read) {
-		to_read = read = 0; //done reading
-		semaphore_down();   //wait until there's more to read
-		memcpy(&to_read, buf, sizeof(int));
+	if (len > to_read) {
+		readn(shm_id, buf, to_read);
+		to_read = len-to_read;
+	} else {
+		readn(shm_id, buf, len);
+		to_read -= len;
 	}
-	printf("read: %d, len: %d, to_read: %d\n", read, len, to_read);
-	if (read + len </*=?*/ to_read) {
-		memcpy(buf, shm + sizeof(int) + read, len);
-		read+=len;
-		return len;
-	}
-	__fail("Reading overflow");
-	//return to_read - (read + len);
-	//aux = read + len - to_read;
-	//memcpy(buf, shm + sizeof(int) + read, aux);
-	//to_read = read = 0; //done reading
-	//memcpy(buf, shm + sizeof(int) + read, len);
-	//memset(shm, '\0', SHM_SIZE);
+
+	//semaphore_let(READ);
+	semaphore_let(WRITE);
 	return !OK;
 }
 
-int ipc_close(int from_id) {
-	semaphore_destroy();
-	shmdt(shm);
-	shmctl(shm_id, IPC_RMID, 0);
-	return OK;
-}
-
-void __assert(int res, string error_text) {
-	int errnost = errno;
-	if (__failed(res)) {
-		perror(error_text);
-		printf("(%d)\n", errnost);
-		exit(1);
+int ipc_disconnect(int from_id, int to_id) {
+	switch(from_id) {
+	case SRV_ID:
+		__wipe_shm();
+		semaphore_let(CONN);
+		return OK;
+	default:
+		return OK; //fail maybe?
 	}
 }
 
-boolean __failed(int res) {
-	return res == -1;
+int ipc_close(int from_id) {
+	switch(from_id) {
+	case SRV_ID:
+		semaphore_destroy(READ);
+		semaphore_destroy(WRITE);
+		semaphore_destroy(CONN);
+		shmdt(shm);
+		shmctl(shm_id, IPC_RMID, 0);
+		return OK;
+	default:
+		return OK; //fail maybe?
+	}
 }
 
-void __fail(string error_text) {
-	printf("%s\n", error_text);
-	exit(1);
+void __wipe_shm() {
+	memset(shm, '\0', SHM_SIZE);
+}
+
+void __attach_shm() {
+	assert((shm = (char*)shmat(shm_id, NULL, 0)) != (void *)-1, "Could not attach to shared memory area");
+	assert((sshm = (char*)shmat(shm_id, NULL, 0)) != (void *)-1, "Could not attach to shared memory area");
 }

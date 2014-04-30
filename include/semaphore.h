@@ -1,9 +1,12 @@
 #ifndef _SEMAPHORE_
 #define _SEMAPHORE_
 
-void semaphore_create();
-void semaphore_up();
-void semaphore_down();
-void semaphore_destroy();
+#include "common.h"
+
+void semaphore_create(int sem_id);
+void semaphore_let(int sem_id);
+void semaphore_stop(int sem_id);
+void semaphore_destroy(int sem_id);
+void semaphore_show(int sem_id);
 
 #endif

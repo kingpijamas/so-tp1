@@ -35,7 +35,7 @@ void semaphore_create() {
 	}
 }
 
-void semaphore_up() {
+void semaphore_let() {
 	printf("UP\n");
 	printf("Before:");
 	__sem_show_value();
@@ -44,7 +44,7 @@ void semaphore_up() {
 	__sem_show_value();
 }
 
-void semaphore_down() {
+void semaphore_stop() {
 	printf("DOWN\n");
 	printf("Before:");
 	__sem_show_value();
