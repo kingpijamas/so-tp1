@@ -1,7 +1,7 @@
 #include <errno.h>
 #include <unistd.h>
 
-ssize_t readn(int fd, void *vptr, size_t n) {
+ssize_t freadn(int fd, void *vptr, size_t n) {
 	size_t nleft;
 	ssize_t nread;
 	char *ptr;
@@ -20,7 +20,7 @@ ssize_t readn(int fd, void *vptr, size_t n) {
 	return n - nleft;		/* 0 <= result <= n */
 }
 
-ssize_t writen(int fd, const void *vptr, size_t n) {
+ssize_t fwriten(int fd, const void *vptr, size_t n) {
 	size_t nleft;
 	ssize_t nwritten;
 	const char *ptr;

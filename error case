@@ -1,0 +1,69 @@
+creation: 0
+Sem: READ - Sem val: 0
+Sem: WRITE - Sem val: 0
+Sem: CONN - Sem val: 0
+
+Parent: about to read
+
+(Try) Recv: SRV<-CLT  (5)
+Sem: READ - Sem val: 0
+
+Child: about to send ("hello")
+
+(Try) Send: CLT->SRV (5) ("hello")
+Sem: WRITE - Sem val: 1
+
+Send: CLT->SRV (5) ("hello")
+Sem: READ - Sem val: 0
+
+Sem val: 0
+Child: msg sent
+
+(Try) Recv: CLT<-SRV (2)
+Recv: SRV<-CLT (5) ()
+Sem: READ - Sem val: 0
+Sem: WRITE - Sem val: 0
+Sem val: 1
+Parent: read ("hello") --(expecting: "hello")
+Parent: [OK]
+
+(Try) Send: SRV->CLT (2) ("OK")
+Sem: WRITE - Sem val: 1
+
+Send: SRV->CLT (2) ("OK")
+Sem: READ - Sem val: 0
+Sem val: 1
+disconnect: 0->1
+Parent: about to read
+
+(Try) Recv: SRV<-CLT  (6)
+
+Sem: READ - Sem val: 0
+Recv: CLT<-SRV (2) ()
+Sem: WRITE - Sem val: 0
+Sem val: 1
+Child: response received (OK)
+Child: ok response received
+disconnect: 1->0
+
+Child: about to send ("world!")
+
+(Try) Send: CLT->SRV (6) ("world!")
+Sem: WRITE - Sem val: 1
+
+Send: CLT->SRV (6) ("world!")
+Sem: READ - Sem val: 0
+Sem val: 1
+Child: msg sent
+
+(Try) Recv: CLT<-SRV (2)
+Sem: READ - Sem val: 1
+
+Recv: CLT<-SRV (2) (OKw������w�p���v� ��l�(����w�)
+Sem: WRITE - Sem val: 0
+Sem val: 1
+Child: response received (wo)
+Child: Error
+disconnect: 1->0
+close: 1
+Child: out [ERROR]

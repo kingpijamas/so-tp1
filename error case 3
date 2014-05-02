@@ -1,0 +1,22 @@
+SRV(0): init
+Sem: CONN - Sem val: 0
+Sem: READ - Sem val: 0
+Sem: WRITE - Sem val: 0
+SRV(0): connect (SRV(0)<->CLT(-1))
+SRV(0): (TRY) recv (SRV<-CLT) (5 bytes)
+Sem: READ - Sem val: 0
+CLT(1): connect (CLT(1)<->SRV(0))
+CLT(1): (TRY) send (CLT->SRV(0)) "hello", (5 bytes)
+Sem: WRITE - Sem val: 1
+CLT(1): send (CLT->SRV(0)) "hello", (5 bytes)
+Done writing
+Sem: READ - Sem val: 1
+CLT(1): (TRY) recv (CLT<-SRV) (2 bytes)
+Sem: READ - Sem val: 1
+CLT(1): recv (CLT<-SRV) (2 bytes)
+Done reading
+Sem: WRITE - Sem val: 1
+Child: Error
+CLT(1): disconnect
+CLT(1): close
+Child: out [ERROR]

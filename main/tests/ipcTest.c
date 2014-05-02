@@ -18,15 +18,10 @@
 #define NOT_OK_MSG "NK"
 #define SRV_RESP_LEN 2
 
-void fatal(char *s) {
-	perror(s);
-	exit(1);
-}
+#define SYNC_SEM -1
 
-void bye(int sig) {
-	printf("Parent received SIGPIPE\n");
-	exit(1);
-}
+static void __fatal(char *s);
+static void __bye(int sig);
 
 int main(int argc, char **argv) {
 	int i = 0;
@@ -34,51 +29,73 @@ int main(int argc, char **argv) {
 	boolean failed = false;
 	string messages[] = {"hello", "world!", NULL};
 
-	ipc_close(SRV_ID);
+	semaphore_create(SYNC_SEM);
 
 	switch (fork()) {
 		case -1:
-			fatal("Fork error");
+			__fatal("Fork error");
 			break;
 		case 0: /* child */
+
+			//printf("\nHijo:\n");
+			semaphore_stop(SYNC_SEM);
+			//printf("\nEntro hijo\n");
 			while ( messages[i]!=NULL && !failed ) {
 				ipc_connect(CLT_ID, SRV_ID);
-				printf("Child: about to send (\"%s\")\n", messages[i]);
+				//printf("\nChild: about to send (\"%s\")\n", messages[i]);
 				ipc_send(CLT_ID, 0, messages[i], strlen(messages[i]));
-				printf("Child: msg sent\n");
+				//printf("Child: msg sent\n");
 				ipc_recv(CLT_ID, buf, SRV_RESP_LEN);
-				printf("Child: response received (%.*s)\n", SRV_RESP_LEN, buf);
+				//printf("Child: response received (%.*s)\n", SRV_RESP_LEN, buf);
 				failed = !strneq(OK_MSG, buf, SRV_RESP_LEN);
 				if (failed) {
 					printf("Child: Error\n");
 				} else {
 					printf("Child: ok response received\n");
 				}
+				ipc_disconnect(CLT_ID, SRV_ID);
 				i++;
 			}
-			ipc_close(INVALID);
+			semaphore_let(SYNC_SEM);
+			ipc_close(CLT_ID);
 			printf("Child: out %s\n",failed? "[ERROR]":"[OK]");
 			break;
 		default: /* parent */
-			signal(SIGPIPE, bye);
+			//printf("\nPadre:\n");
+			signal(SIGPIPE, __bye);
 			ipc_init(SRV_ID);
 			ipc_connect(SRV_ID, INVALID);
+			semaphore_let(SYNC_SEM);
+			//printf("\nEntro padre\n");
+
 			while ( messages[i]!=NULL ) {
-				printf("Parent: about to read\n");
+				//printf("Parent: about to read\n");
 				ipc_recv(SRV_ID, buf, strlen(messages[i]));
-				printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", strlen(messages[i]), buf, messages[i]);
+				//printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", strlen(messages[i]), buf, messages[i]);
 				if (strneq(messages[i], buf, strlen(messages[i]))) {
 					printf("Parent: [OK]\n");
 					ipc_send(SRV_ID, CLT_ID, OK_MSG, SRV_RESP_LEN);
 				} else {
 					printf("Parent: [ERROR]\n");
 					ipc_send(SRV_ID, CLT_ID, NOT_OK_MSG, SRV_RESP_LEN);
+					//exit(1);
 				}
 				i++;
 			}
-			ipc_disconnect(SRV_ID, CLT_ID);
+			semaphore_stop(SYNC_SEM);
+			ipc_close(SRV_ID);
 			printf("Parent: out\n");
 			break;
 	}
 	return 0;
+}
+
+void __fatal(char *s) {
+	perror(s);
+	exit(1);
+}
+
+void __bye(int sig) {
+	printf("Parent received SIGPIPE\n");
+	exit(1);
 }

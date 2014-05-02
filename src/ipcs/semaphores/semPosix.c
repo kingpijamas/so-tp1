@@ -22,21 +22,11 @@ void semaphore_create(int sem_id) {
 }
 
 void semaphore_let(int sem_id) {
-	//printf("UP\n");
-	//printf("Before:");
-	//__sem_show_value();
 	sem_post(__sem_get(__as_sem_name(sem_id)));
-	//printf("After:");
-	//__sem_show_value();
 }
 
 void semaphore_stop(int sem_id) {
-	//printf("DOWN\n");
-	//printf("Before:");
-	//__sem_show_value();
 	sem_wait(__sem_get(__as_sem_name(sem_id)));
-	//printf("After:");
-	//__sem_show_value();
 }
 
 void semaphore_destroy(int sem_id) {
