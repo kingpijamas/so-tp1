@@ -5,7 +5,6 @@ MAIN = main
 MODEL = $(SRC)/model
 DB = $(SRC)/db
 CLIENTS = $(SRC)/client
-SERVER = $(SRC)/server
 IPCS = $(SRC)/ipcs
 UTILS = $(SRC)/utils
 MSG = $(SRC)/msg
@@ -13,7 +12,7 @@ RUN = $(MAIN)/$(MAIN_FILE)
 
 MAIN_FILE = tests/ipcTest.c
 IPC = fifo.c
-CLIENT = client.c
+CLIENT = clientNoSrv.c
 
 DIRS = $(MODEL) $(DB) $(UTILS) $(SERVER) $(MSG)
 FILES = $(shell find $(DIRS) -name '*.c') $(CLIENTS)/$(CLIENT) $(IPCS)/$(IPC) $(RUN)

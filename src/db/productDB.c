@@ -1,21 +1,6 @@
 #include "../../include/productDB.h"
-#include <unistd.h>
-#include <sys/stat.h>
-#include <string.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <stdio.h> // for perror and remove
 
-typedef struct {
-    short l_type;    /* Type of lock: F_RDLCK, F_WRLCK, F_UNLCK */
-    short l_whence;  /* How to interpret l_start: SEEK_SET, SEEK_CUR, SEEK_END */
-    off_t l_start;   /* Starting offset for lock */
-    off_t l_len;     /* Number of bytes to lock */
-    pid_t l_pid;     /* PID of process blocking our lock (F_GETLK only) */
-} flock;
-
-static void __write_new(Product product);
+static void __write_new(Product product, client_action action, FILE * file, flock * flptr);
 static FILE * __open(string name, const string mode);
 static string __get_path_to_tuple(string name);
 
@@ -45,88 +30,120 @@ db_ret_code db_init() {
 	return OK;
 }
 
-db_ret_code db_save_product(Product product) {
+db_ret_code db_save_product(Product product, client_action action) {
 	int getVal;
+	FILE * file;
+	flock fl=__init_flock();
+	flock * flptr=&fl;
 	if (!init) {
 		return DB_NOT_INITIALIZED;
 	}
-	getVal = db_get_product_by_name(product.name, &product);
+	printf("%s\n","I'm here");
+	getVal = db_get_product_by_name(product.name, &product, action, file, flptr);
 	switch (getVal) {
 		case OK:
 			return PRODUCT_EXISTS;
 		case NO_PRODUCT_FOR_NAME:
-			__write_new(product);
+			__write_new(product, action, file, flptr); //NO deberia usar file ni flptr porque no existe todavía
 			return OK;
 		default:
 			return getVal;
 	}
 }
 
-db_ret_code db_get_product_by_name(product_name name, Product * productp) {
+db_ret_code db_get_product_by_name(product_name name, Product * productp, client_action action, FILE * fileout, flock * flptrout) {
 	Product rdProduct;
-	int fd;
+	// int fd;
 	flock fl=__init_flock();
 	fl.l_pid=getpid();
 	flock * flptr=&fl;
+	FILE * file;
 
 	if (!init) {
 		return DB_NOT_INITIALIZED;
 	}	
-	FILE * file = __open(name, "r");
-	if (file == NULL) {
-		return NO_PRODUCT_FOR_NAME;
+	if(action==SHOW || action == ADD){
+		//La idea es que add de que no hay producto, entonces no tiene sentido lockearlo para write
+		printf("%s\n","Im here because I'm an ADD or SHOW in get");
+		file = __open(name, "r");
+		if (file == NULL) {
+			printf("%s\n","No product for name");
+			return NO_PRODUCT_FOR_NAME;
+		}
+		__lock(fileno(file), flptr);		
+	}else if (action==TAKE || action==DEPOSIT || action==REMOVE){
+		file = __open(name, "r+");
+		if (file == NULL) {
+			printf("%s\n","No product for name");
+			return NO_PRODUCT_FOR_NAME;
+		}
+		__change_lock(flptr, WRITE_MODE);
+		__lock(fileno(file), flptr);
 	}
-
-	fd=fileno(file);
-	__lock(fd, flptr);
-
 	product_set_name(&rdProduct, name);
 	while(fscanf(file,"%d\n", &((rdProduct).quantity)) != EOF) {;}
-
-	__unlock(fd, flptr);
-	fclose(file);
+	if(action==SHOW || action==REMOVE){ //No me importa que se me metan en el medio.
+		__unlock(fileno(file), flptr);	
+		fclose(file);
+	 }else{
+		// __unlock(fileno(file), flptr);	
+		printf("file descriptor %d\n",fileno(file));
+		*fileout=*file;
+		*flptrout=fl;
+		fclose(file);
+	}
 	*productp = rdProduct;
+	// printf("Quantity product get%d\n",rdProduct.quantity);
 	return OK;
 }
 
-db_ret_code db_update_product(Product product) {
+db_ret_code db_update_product(Product product, client_action action) {
 	int getVal;
 	Product originalProduct;
-
+	int p;
 	if (!init) {
 		return DB_NOT_INITIALIZED;
 	}
-	getVal = db_get_product_by_name(product.name, &originalProduct);
+	FILE * file;
+	flock fl=__init_flock();
+	flock * flptr=&fl;
+	getVal = db_get_product_by_name(product.name, &originalProduct, action, file, flptr);
+	fclose(file);
 	switch (getVal) {
 		case NO_PRODUCT_FOR_NAME:
 			return NO_PRODUCT_FOR_NAME;
 		case OK:
-			product_set_quantity(&product, product.quantity+originalProduct.quantity);
-			__write_new(product);
+			printf("%s\n","I'm updating product OK");
+			p=product.quantity+originalProduct.quantity;
+			// printf("Quantity BEFORE %d\n",originalProduct.quantity);
+			product_set_quantity(&product,p);
+			__write_new(product, action, file, flptr); // Deberia usar file y flptr
 			return OK;
 		default:
 			return UNEXPECTED_UPDATE_ERROR;
 	}
 }
 
-db_ret_code db_delete_product(product_name name) {
+db_ret_code db_delete_product(product_name name, client_action action) {
 	Product product;
 	int getVal; 
 	if (!init) {
 		return DB_NOT_INITIALIZED;
 	}
-	int fd;
+	// int fd;
 	flock fl=__init_flock();
 	fl.l_pid=getpid();
 	flock * flptr=&fl;
-	FILE * file = __open(name, "w+r");
-	fd=fileno(file);
+	FILE * file = __open(name, "w+r"); //Si no inicializo segfaultea
+	// fd=fileno(file);
 
-	getVal = db_get_product_by_name(name, &product);
+	getVal = db_get_product_by_name(name, &product, action, file, flptr);
 	switch (getVal) {
 		case OK:
-			__change_lock(flptr,WRITE_MODE);
-			__lock(fd,flptr);
+			// El get lockea.
+			// __change_lock(flptr,WRITE_MODE);
+			// __lock(fd,flptr);
+			// fclose(file);
 			if (remove(__get_path_to_tuple(name)) != 0){
 				return UNEXPECTED_DELETE_ERROR;
 			}
@@ -136,17 +153,33 @@ db_ret_code db_delete_product(product_name name) {
 	}
 }
 
-void __write_new(Product product) {
-	int fd;
-	flock fl=__init_flock();
-	fl.l_pid=getpid();
-	flock * flptr=&fl;
-	__change_lock(flptr,WRITE_MODE);
-	FILE * file = __open(product.name, "w+r");
-	fd=fileno(file);
-	__lock(fd,flptr);
+void __write_new(Product product, client_action action, FILE * file, flock * flptr) {
+	printf("%s\n","Write new!");
+	// FILE * file;
+	if(action==ADD){
+		// fl=__init_flock();
+		flptr->l_pid=getpid();
+		__change_lock(flptr,WRITE_MODE);
+		file = __open(product.name, "w+r");
+		int fd=fileno(file);
+		__lock(fd,flptr);		
+	}else{
+		//No puedo mantener el file entre funciones porque segfaultea (osea el filein)
+		// __unlock(fileno(filein), flptr);
+		//ME QUEDE ACA: ¿Qué segfaultea? ¿Puede ser el flptr? SINO dejar todo sin el mismo lock entre get y write..
+		file=__open(product.name,"r+");		
+		// flptr->l_pid=getpid();
+		__change_lock(flptr,WRITE_MODE);
+		__lock(fileno(file), flptr);
+	}
+	printf("%s\n","fprintf before");
+	printf("file descriptor before segfault %d\n",fileno(file));
 	fprintf(file, "%d\n", product.quantity);
-	__unlock(fd,flptr);
+	printf("%s\n","fprintf after");
+	if(action==TAKE || action==DEPOSIT || action==ADD){
+		printf("%s\n","I'm depositing");
+		__unlock(fileno(file),flptr);		
+	}
 	fclose(file);
 }
 
@@ -191,6 +224,7 @@ void __lock(int fd, flock * flptr){
 		perror("fcntrl");
 		exit(1);
 	}
+	printf("%s\n","In __lock");
 }
 
 void __unlock(int fd, flock * flptr){
