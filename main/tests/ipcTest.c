@@ -29,16 +29,16 @@ int main(int argc, char **argv) {
 	boolean failed = false;
 	string messages[] = {"hello", "world!", NULL};
 
-	semaphore_create(SYNC_SEM);
+	//semaphore_init(SYNC_SEM, true);
 
 	switch (fork()) {
 		case -1:
 			__fatal("Fork error");
 			break;
 		case 0: /* child */
-
+			usleep(1000);
 			//printf("\nHijo:\n");
-			semaphore_stop(SYNC_SEM);
+			//semaphore_stop(SYNC_SEM);
 			//printf("\nEntro hijo\n");
 			while ( messages[i]!=NULL && !failed ) {
 				ipc_connect(CLT_ID, SRV_ID);
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 				ipc_disconnect(CLT_ID, SRV_ID);
 				i++;
 			}
-			semaphore_let(SYNC_SEM);
+			//semaphore_let(SYNC_SEM);
 			ipc_close(CLT_ID);
 			printf("Child: out %s\n",failed? "[ERROR]":"[OK]");
 			break;
@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
 			signal(SIGPIPE, __bye);
 			ipc_init(SRV_ID);
 			ipc_connect(SRV_ID, INVALID);
-			semaphore_let(SYNC_SEM);
+			//semaphore_let(SYNC_SEM);
 			//printf("\nEntro padre\n");
 
 			while ( messages[i]!=NULL ) {
@@ -82,7 +82,8 @@ int main(int argc, char **argv) {
 				}
 				i++;
 			}
-			semaphore_stop(SYNC_SEM);
+			usleep(1000);
+			//semaphore_stop(SYNC_SEM);
 			ipc_close(SRV_ID);
 			printf("Parent: out\n");
 			break;

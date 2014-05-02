@@ -9,6 +9,6 @@ void assert(boolean val, string error_text) {
 void fail(string error_text) {
 	int errnost = errno;
 	perror(error_text);
-	printf("%s (errno=%d)\n", error_text, errnost);
+	printf("(errno=%d)\n", errnost);
 	exit(1);
 }

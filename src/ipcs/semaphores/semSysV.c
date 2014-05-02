@@ -4,69 +4,69 @@
 #include <sys/sem.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <errno.h>
+#include <string.h>
+#include "../../../include/key.h"
+#include "../../../include/error.h"
 
-#define SEM_ROOT_PATH "/tmp/so-sem"
-#define BASE_SEM_NAME "so-sem-sysv"
-#define SEM_PATH SEM_ROOT_PATH"/"BASE_SEM_NAME
+static int __update_sem(int sem_id, int change);
+static void __wipe_sems();
 
-static sem_t * __sem_get();
-static void __sem_show_value();
+static int __sems_id = -1, __sem_n = -1;
 
-static sem_id sem = NULL;
-
-void semaphore_create() {
-	if (mkdir(SEM_ROOT_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1
-		&& errno != EEXIST) {
-		return CANNOT_CREATE_DATABASE;
-	}
-	if (mkdir(TABLE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1
-		&& errno != EEXIST) {
-		return CANNOT_CREATE_TABLE;
-	}
-
-
-	key_t key = ftok(SEM_PATH, 'A');
-
-	int errnost;
-	if (sem_open(SEM_NAME, O_CREAT | O_EXCL | O_RDWR, 0666, 0) == SEM_FAILED) {
-		errnost = errno;
-		printf("Sem failed: %d\n", errnost);
-	}
-}
-
-void semaphore_let() {
-	printf("UP\n");
-	printf("Before:");
-	__sem_show_value();
-	sem_post(__sem_get());
-	printf("After:");
-	__sem_show_value();
-}
-
-void semaphore_stop() {
-	printf("DOWN\n");
-	printf("Before:");
-	__sem_show_value();
-	sem_wait(__sem_get());
-	printf("After:");
-	__sem_show_value();
-}
-
-void semaphore_destroy() {
-	sem_unlink(SEM_NAME);
-}
-
-void __sem_show_value() {
+typedef union {
 	int val;
-	if (sem_getvalue(__sem_get(), &val) != -1) {
-		printf("Sem: val=%d\n", val);
+	struct semid_ds * buf;
+	ushort * array;
+} __semun;
+
+void semaphore_init(int sem_n, boolean creat) {
+	int flags = 0666;
+	string error_text = "Failure initializing semaphore(s)";
+	if (creat) {
+		semaphore_destroy(0);
+		error_text = "Failure creating semaphore(s)";
+		flags = flags | IPC_CREAT | O_EXCL;
+	}
+	assert((__sems_id = semget(key_get('S'), sem_n, flags)) != -1, error_text);
+	__sem_n = sem_n;
+	if (creat) {
+		__wipe_sems();
 	}
 }
 
-sem_t * __sem_get() {
-	if (sem != NULL) {
-		return sem;
-	}
-	return sem_open(SEM_NAME, O_RDWR);
+void semaphore_let(int sem_id) {
+	//printf("let: __sems_id:%d, __sem_n:%d, sem_id:%d\n", __sems_id, __sem_n, sem_id);
+	assert(__update_sem(sem_id, +1) != -1, "Failure unlocking semaphore");
+}
+
+void semaphore_stop(int sem_id) {
+	//printf("stop: __sems_id:%d, __sem_n:%d, sem_id:%d\n", __sems_id, __sem_n, sem_id);
+	assert(__update_sem(sem_id, -1) != -1, "Failure waiting at semaphore");
+}
+
+void semaphore_destroy(int sem_id) {
+	semctl(__sems_id, 0, IPC_RMID);
+	__sems_id = __sem_n = -1;
+}
+
+void semaphore_show(int sem_id) {
+	semctl(__sems_id, sem_id, GETVAL);
+}
+
+int __update_sem(int sem_id, int change) {
+	struct sembuf arg;
+	arg.sem_num = sem_id;
+	arg.sem_op = change;
+	arg.sem_flg = SEM_UNDO; // seems nice to add this one
+	return semop(__sems_id, &arg, 1);
+}
+
+void __wipe_sems() {
+	ushort vals[__sem_n];
+	__semun arg;
+
+	memset(&vals, 0, __sem_n);
+	arg.array = vals;
+
+	semctl(__sems_id, 0, SETALL, &arg);
 }
