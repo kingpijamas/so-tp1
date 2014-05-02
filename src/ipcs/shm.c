@@ -34,14 +34,14 @@ typedef enum {
 int ipc_init(int from_id) {
 	switch(from_id) {
 	case SRV_ID:
-		printf("SRV(%d): init\n", from_id);
+		printf("\nSRV(%d): init\n", from_id);
 		__get_shm();
 		__wipe_shm();
 		semaphore_init(SHM_SEM_NUM, true);
 		__print_all_sem();
 		return OK;
 	default:
-		printf("CLT(%d): init\n", from_id);
+		printf("\nCLT(%d): init\n", from_id);
 		return OK; //fail maybe?
 	}
 }
@@ -49,12 +49,12 @@ int ipc_init(int from_id) {
 int ipc_connect(int from_id, int to_id) { // should fail when there is no server
 	switch (from_id) {
 	case SRV_ID:
-		printf("SRV(%d): connect (SRV(%d)<->CLT(%d))\n", from_id, from_id, to_id);
+		printf("\nSRV(%d): connect (SRV(%d)<->CLT(%d))\n", from_id, from_id, to_id);
 		semaphore_let(SEM_WRITE);
 		semaphore_let(SEM_CONN);
 		return OK; // it's like an accept
 	default:
-		printf("CLT(%d): connect (CLT(%d)<->SRV(%d))\n", from_id, from_id, to_id);
+		printf("\nCLT(%d): connect (CLT(%d)<->SRV(%d))\n", from_id, from_id, to_id);
 		semaphore_init(SHM_SEM_NUM, false);
 		semaphore_stop(SEM_CONN);
 		__get_shm();
@@ -65,10 +65,10 @@ int ipc_connect(int from_id, int to_id) { // should fail when there is no server
 int ipc_send(int from_id, int to_id, void * buf, int len) {
 	switch(from_id) {
 	case SRV_ID:
-		printf("SRV(%d): (TRY) send (SRV->CLT(%d)) \"%s\", (%d bytes)\n", from_id, to_id, (string)buf, len);
+		printf("\nSRV(%d): (TRY) send (SRV->CLT(%d)) \"%s\", (%d bytes)\n", from_id, to_id, (string)buf, len);
 		break;
 	default:
-		printf("CLT(%d): (TRY) send (CLT->SRV(%d)) \"%s\", (%d bytes)\n", from_id, to_id, (string)buf, len);
+		printf("\nCLT(%d): (TRY) send (CLT->SRV(%d)) \"%s\", (%d bytes)\n", from_id, to_id, (string)buf, len);
 		break;
 	}
 
@@ -77,10 +77,10 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 
 	switch(from_id) {
 	case SRV_ID:
-		printf("SRV(%d): send (SRV->CLT(%d)) \"%s\", (%d bytes)\n", from_id, to_id, (string)buf, len);
+		printf("\nSRV(%d): send (SRV->CLT(%d)) \"%s\", (%d bytes)\n", from_id, to_id, (string)buf, len);
 		break;
 	default:
-		printf("CLT(%d): send (CLT->SRV(%d)) \"%s\", (%d bytes)\n", from_id, to_id, (string)buf, len);
+		printf("\nCLT(%d): send (CLT->SRV(%d)) \"%s\", (%d bytes)\n", from_id, to_id, (string)buf, len);
 		break;
 	}
 	
@@ -99,10 +99,10 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 int ipc_recv(int from_id, void * buf, int len) {
 	switch(from_id) {
 	case SRV_ID:
-		printf("SRV(%d): (TRY) recv (SRV<-CLT) (%d bytes)\n", from_id, len);
+		printf("\nSRV(%d): (TRY) recv (SRV<-CLT) (%d bytes)\n", from_id, len);
 		break;
 	default:
-		printf("CLT(%d): (TRY) recv (CLT<-SRV) (%d bytes)\n", from_id, len);
+		printf("\nCLT(%d): (TRY) recv (CLT<-SRV) (%d bytes)\n", from_id, len);
 		break;
 	}
 	//if (to_read == -1) { NO se puede hacer asi, porque el primer recv del srv se queda tildado
@@ -112,10 +112,10 @@ int ipc_recv(int from_id, void * buf, int len) {
 	//}
 	switch(from_id) {
 	case SRV_ID:
-		printf("SRV(%d): recv (SRV<-CLT) (%d bytes)\n", from_id, len);
+		printf("\nSRV(%d): recv (SRV<-CLT) (%d bytes)\n", from_id, len);
 		break;
 	default:
-		printf("CLT(%d): recv (CLT<-SRV) (%d bytes)\n", from_id, len);
+		printf("\nCLT(%d): recv (CLT<-SRV) (%d bytes)\n", from_id, len);
 		break;
 	}
 
@@ -150,10 +150,10 @@ int ipc_recv(int from_id, void * buf, int len) {
 int ipc_disconnect(int from_id, int to_id) {
 	switch(from_id) {
 	case SRV_ID:
-		printf("SRV(%d): disconnect\n", from_id);
+		printf("\nSRV(%d): disconnect\n", from_id);
 		return OK;
 	default:
-		printf("CLT(%d): disconnect\n", from_id);
+		printf("\nCLT(%d): disconnect\n", from_id);
 		__wipe_shm();
 		semaphore_let(SEM_CONN);
 		return OK; //fail maybe?
@@ -163,7 +163,7 @@ int ipc_disconnect(int from_id, int to_id) {
 int ipc_close(int from_id) {
 	switch(from_id) {
 	case SRV_ID:
-		printf("SRV(%d): close\n", from_id);
+		printf("\nSRV(%d): close\n", from_id);
 		semaphore_destroy(SEM_READ);
 		semaphore_destroy(SEM_WRITE);
 		semaphore_destroy(SEM_CONN);
@@ -171,7 +171,7 @@ int ipc_close(int from_id) {
 		shmctl(shm_id, IPC_RMID, 0);
 		return OK;
 	default:
-		printf("CLT(%d): close\n", from_id);
+		printf("\nCLT(%d): close\n", from_id);
 		return OK; //fail maybe?
 	}
 }

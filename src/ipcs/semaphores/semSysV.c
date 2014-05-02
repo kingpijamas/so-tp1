@@ -50,7 +50,7 @@ void semaphore_destroy(int sem_id) {
 }
 
 void semaphore_show(int sem_id) {
-	semctl(__sems_id, sem_id, GETVAL);
+	printf("Sem val: %d\n", semctl(__sems_id, sem_id, GETVAL));
 }
 
 int __update_sem(int sem_id, int change) {

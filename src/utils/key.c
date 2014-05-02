@@ -5,6 +5,6 @@
 
 key_t key_get(char key_char) {
 	int key = ftok(KEY_FILE, key_char);
-	printf("Key: %x\n", key);
+	//printf("Key: %x\n", key);
 	return key;
 }

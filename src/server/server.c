@@ -13,7 +13,7 @@ static void __send_err_resp(int client_id, boolean status, int code);
 static void __recv(void * buf, int len);
 static void __send(int to_id, void * buf, int len);
 static void __assert(int ret_status);
-static void __stop(int x);
+static void __srv_stop(int x);
 static void __crash();
 
 void srv_start() { //TODO: signal()!
@@ -22,8 +22,9 @@ void srv_start() { //TODO: signal()!
 
 	__assert(ipc_init(SRV_ID));
 	__assert(db_init());
+	__assert(ipc_connect(SRV_ID, 0));
 
-	signal(SIGINT, __stop);
+	signal(SIGINT, __srv_stop);
 	while(true) {
 		printf("Srv: Sleeping...\n");
 		usleep(700 * 1000);
@@ -150,8 +151,9 @@ void __assert(int ret_status) { //TODO: check
 	}
 }
 
-void __stop(int x) {
+void __srv_stop(int x) {
 	printf("Srv: Stopping... (%d)\n", x);
+	ipc_disconnect(SRV_ID, 0);
 	ipc_close(SRV_ID);
 	printf("Srv: stopped\n");
 	exit(0);
