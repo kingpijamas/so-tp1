@@ -45,9 +45,9 @@ int main(int argc, char **argv) {
 			usleep(1000);
 			passed = /*__get_product("pen", false)
 				&&*/__write_product("rubber", 80, false)
-				&& __remove_product("rubber", false)
+				/*&& __remove_product("rubber", false)
 				&& __get_product("rubber", true)
-				&& __write_product("rubber", 1, false);
+				&& __write_product("rubber", 1, false);*/;
 			printf("\n\nAll tests done: %s\n", !passed? "[FAILED]":"[OK]");
 			ipc_close(INVALID);
 			break;

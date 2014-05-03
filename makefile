@@ -3,7 +3,7 @@ SRC = src
 MAIN = main
 
 MODEL = $(SRC)/model
-DB = $(SRC)/db
+DBS = $(SRC)/db
 CLIENTS = $(SRC)/client
 SERVER = $(SRC)/server
 IPCS = $(SRC)/ipcs
@@ -16,9 +16,10 @@ MAIN_FILE = tests/ipcTest.c
 IPC = fifo.c
 CLIENT = client.c
 SEM = semPosix.c
+DB = productDB.c
 
-DIRS = $(MODEL) $(DB) $(UTILS) $(SERVER) $(MSG)
-FILES = $(shell find $(DIRS) -name '*.c') $(CLIENTS)/$(CLIENT) $(IPCS)/$(IPC) $(SEMS)/$(SEM) $(RUN)
+DIRS = $(MODEL) $(UTILS) $(SERVER) $(MSG)
+FILES = $(shell find $(DIRS) -name '*.c') $(CLIENTS)/$(CLIENT) $(DBS)/$(DB) $(IPCS)/$(IPC) $(SEMS)/$(SEM) $(RUN)
 
 OUT_EXE = tp
 COPTS = -Wall -g

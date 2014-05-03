@@ -56,7 +56,6 @@ db_ret_code db_get_product_by_name(product_name name, Product * productp) {
 	if (!init) {
 		return DB_NOT_INITIALIZED;
 	}
-
 	FILE * file = __open(name, "r");
 	if (file == NULL) {
 		return NO_PRODUCT_FOR_NAME;
@@ -114,7 +113,8 @@ void __write_new(Product product) {
 }
 
 FILE * __open(product_name name, const string mode) {
-	return fopen(__get_path_to_tuple(name), mode);
+	FILE * ans = fopen(__get_path_to_tuple(name), mode);
+	return ans;
 }
 
 string __get_path_to_tuple(product_name name) {

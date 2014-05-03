@@ -9,7 +9,7 @@ static void __handle_get_product(int client_id);
 static void __handle_write_product(int client_id);
 static void __handle_remove_product(int client_id);
 static void __handle_invalid_call(int client_id);
-static void __send_err_resp(int client_id, boolean status, int code);
+static void __send_resp(int client_id, boolean status, int code);
 static void __recv(void * buf, int len);
 static void __send(int to_id, void * buf, int len);
 static void __assert(int ret_status);
@@ -66,10 +66,13 @@ srv_ret_code srv_get_product(product_name name, Product * productp) {
 	return db_get_product_by_name(name, productp);
 }
 
-srv_ret_code srv_write_product(Product product) {
+srv_ret_code srv_write_product(Product * productp) {
 	int ret;
-	if ((ret = db_update_product(product)) == NO_PRODUCT_FOR_NAME) {
-		ret = db_save_product(product);
+	printf("%s %d\n", productp->name, productp->quantity);
+	ret = db_update_product(*productp);
+	
+	if ((ret = db_update_product(*productp)) == NO_PRODUCT_FOR_NAME) {
+		ret = db_save_product(*productp);
 	}
 	return ret;
 }
@@ -94,7 +97,7 @@ void __handle_get_product(int client_id) {
 		__send(client_id, resp, sizeof(product_resp));
 		return;
 	}
-	__send_err_resp(client_id, ERR_RESP, ret);
+	__send_resp(client_id, ERR_RESP, ret);
 }
 
 void __handle_remove_product(int client_id) {
@@ -110,34 +113,48 @@ void __handle_remove_product(int client_id) {
 		&& (ret = srv_remove_product(name)) == OK) {
 		status = OK_RESP;
 	}
-	__send_err_resp(client_id, status, ret);
+	__send_resp(client_id, status, ret);
 }
 
 
 void __handle_write_product(int client_id) {
 	int ret;
 	char msg[sizeof(Product)];
+	/*Product * product = malloc(sizeof(Product));
+	msg_type status=ERR_RESP;
+
+	printf("Srv: Reading message body\n");
+	__recv(&msg, sizeof(Product));
+
+	if ((ret = msg_deserialize_product(msg, product)) == OK) {
+		printf("%s\n", product->name);
+		if ((ret = srv_write_product(product)) == OK) {
+			status = OK_RESP;
+		}
+	}*/
 	Product product;
 	msg_type status=ERR_RESP;
 
 	printf("Srv: Reading message body\n");
 	__recv(&msg, sizeof(Product));
 
-	if ((ret = msg_deserialize_product(msg, &product)) == OK 
-		&& (ret = srv_write_product(product)) == OK) {
-		status = OK_RESP;
+	if ((ret = msg_deserialize_product(msg, &product)) == OK) {
+		//printf("%s\n", product.name);
+		if ((ret = srv_write_product(&product)) == OK) {
+			status = OK_RESP;
+		}
 	}
-	__send_err_resp(client_id, status, ret);
+	__send_resp(client_id, status, ret);
 }
 
-void __send_err_resp(int client_id, boolean status, int code) {
+void __send_resp(int client_id, boolean status, int code) {
 	char resp[sizeof(error_resp)]; //maybe buffer could be used here
 	msg_serialize_error_resp(status, code, resp);
 	__send(client_id, resp, sizeof(error_resp));
 }
 
 void __handle_invalid_call(int client_id) {
- 	__send_err_resp(client_id, ERR_RESP, INVALID_MSG);
+ 	__send_resp(client_id, ERR_RESP, INVALID_MSG);
 }
 
 void __recv(void * buf, int len) {

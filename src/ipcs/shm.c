@@ -22,7 +22,7 @@ static void __print_sem(int sem_id);
 static void __print_all_sem();
 static void __print_shm();
 
-static int shm_id, to_read = -1;
+static int shm_id, to_read = -1, read = 0;
 static char * shm;
 
 typedef enum {
@@ -83,11 +83,13 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 		printf("\nCLT(%d): send (CLT->SRV(%d)) \"%.*s\", (%d bytes)\n", len, from_id, to_id, (string)buf, len);
 		break;
 	}
-	
+
+	//printf("SHM before:\n");
+	//__print_shm();
 	memcpy(shm, &len, sizeof(int));
 	memcpy(shm+sizeof(int), buf, len);
-	__print_shm();
 	printf("Done writing\n");
+	__print_shm();
 	
 	semaphore_let(SEM_READ);
 	__print_sem(SEM_READ);
@@ -123,13 +125,16 @@ int ipc_recv(int from_id, void * buf, int len) {
 	printf("(before) to_read: %d, len: %d\n", to_read, len);
 	if (to_read == -1) {
 		memcpy(&to_read, shm, sizeof(int));
+		read = 0;
 	}
 	printf("(after) to_read: %d, len: %d\n", to_read, len);
 	if (len > to_read) {
-		memcpy(buf, shm+sizeof(int), to_read);
+		memcpy(buf, shm+sizeof(int)+read, to_read); // TODO: circular buffer!
+		read += to_read;
 		to_read = len-to_read;
 	} else {
-		memcpy(buf, shm+sizeof(int), len);
+		memcpy(buf, shm+sizeof(int)+read, len); // TODO: circular buffer!
+		read += len;
 		if (len == to_read) {
 			to_read = -1;
 		} else {
@@ -142,7 +147,7 @@ int ipc_recv(int from_id, void * buf, int len) {
 	} else if (len == sizeof(int)) {
 		printf("Done reading (\"%d\")\n", ((int *) buf)[0]);
 	} else {
-		printf("Done reading (\"%.*s\")\n", len, (string)buf);
+		printf("Done reading (\"%.*s\")\n", len-1, (string)buf);
 	}
 	
 	if (to_read == -1) {
