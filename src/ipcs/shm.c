@@ -9,7 +9,7 @@
 #include "../../include/rdwrn.h"
 #include "../../include/key.h"
 
-#define SHM_SIZE 500
+#define SHM_SIZE 2000
 #define SHM_KEY ((key_t) 0x111222)
 
 #define SRV_ID 0
@@ -21,6 +21,7 @@ static void __get_shm();
 static void __wipe_shm();
 static void __print_sem(int sem_id);
 static void __print_all_sem();
+static void __print_shm();
 
 static int shm_id, to_read = -1;
 static char * shm;
@@ -65,10 +66,10 @@ int ipc_connect(int from_id, int to_id) { // should fail when there is no server
 int ipc_send(int from_id, int to_id, void * buf, int len) {
 	switch(from_id) {
 	case SRV_ID:
-		printf("\nSRV(%d): (TRY) send (SRV->CLT(%d)) \"%s\", (%d bytes)\n", from_id, to_id, (string)buf, len);
+		printf("\nSRV(%d): (TRY) send (SRV->CLT(%d)) \"%.*s\", (%d bytes)\n", len, from_id, to_id, (string)buf, len);
 		break;
 	default:
-		printf("\nCLT(%d): (TRY) send (CLT->SRV(%d)) \"%s\", (%d bytes)\n", from_id, to_id, (string)buf, len);
+		printf("\nCLT(%d): (TRY) send (CLT->SRV(%d)) \"%.*s\", (%d bytes)\n", len, from_id, to_id, (string)buf, len);
 		break;
 	}
 
@@ -77,15 +78,16 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 
 	switch(from_id) {
 	case SRV_ID:
-		printf("\nSRV(%d): send (SRV->CLT(%d)) \"%s\", (%d bytes)\n", from_id, to_id, (string)buf, len);
+		printf("\nSRV(%d): send (SRV->CLT(%d)) \"%.*s\", (%d bytes)\n", len, from_id, to_id, (string)buf, len);
 		break;
 	default:
-		printf("\nCLT(%d): send (CLT->SRV(%d)) \"%s\", (%d bytes)\n", from_id, to_id, (string)buf, len);
+		printf("\nCLT(%d): send (CLT->SRV(%d)) \"%.*s\", (%d bytes)\n", len, from_id, to_id, (string)buf, len);
 		break;
 	}
 	
 	memcpy(shm, &len, sizeof(int));
 	memcpy(shm+sizeof(int), buf, len);
+	__print_shm();
 	printf("Done writing\n");
 	
 	semaphore_let(SEM_READ);
@@ -105,11 +107,11 @@ int ipc_recv(int from_id, void * buf, int len) {
 		printf("\nCLT(%d): (TRY) recv (CLT<-SRV) (%d bytes)\n", from_id, len);
 		break;
 	}
-	//if (to_read == -1) { NO se puede hacer asi, porque el primer recv del srv se queda tildado
-		// NO deberia bloquearse si to_read != -1 (todavia no termine de leer)
+	if (to_read == -1) {
 		__print_sem(SEM_READ);
 		semaphore_stop(SEM_READ);
-	//}
+	}
+
 	switch(from_id) {
 	case SRV_ID:
 		printf("\nSRV(%d): recv (SRV<-CLT) (%d bytes)\n", from_id, len);
@@ -118,10 +120,12 @@ int ipc_recv(int from_id, void * buf, int len) {
 		printf("\nCLT(%d): recv (CLT<-SRV) (%d bytes)\n", from_id, len);
 		break;
 	}
-
+	__print_shm();
+	printf("(before) to_read: %d, len: %d\n", to_read, len);
 	if (to_read == -1) {
 		memcpy(&to_read, shm, sizeof(int));
 	}
+	printf("(after) to_read: %d, len: %d\n", to_read, len);
 	if (len > to_read) {
 		memcpy(buf, shm+sizeof(int), to_read);
 		to_read = len-to_read;
@@ -133,17 +137,19 @@ int ipc_recv(int from_id, void * buf, int len) {
 			to_read -= len;
 		}
 	}
-	printf("Done reading\n");	
+	printf("(finally) to_read: %d, len: %d\n", to_read, len);
+	if (len == sizeof(char)) {
+		printf("Done reading (\"%c\")\n", ((char *)buf)[0]);
+	} else if (len == sizeof(int)) {
+		printf("Done reading (\"%d\")\n", ((int *) buf)[0]);
+	} else {
+		printf("Done reading (\"%.*s\")\n", len, (string)buf);
+	}
 	
-//	if (to_read != -1) {
-
-//	} 
-	semaphore_let(SEM_WRITE);
-	__print_sem(SEM_WRITE);
-//	if(to_read!=-1) {
-//	semaphore_stop(SEM_WRITE);
-//	}
-//	semaphore_stop(SEM_WRITE); double blocking doesn't work
+	if (to_read == -1) {
+		semaphore_let(SEM_WRITE);
+		__print_sem(SEM_WRITE);
+	}
 	return OK;
 }
 
@@ -209,4 +215,15 @@ void __print_sem(int sem_id) {
 void __get_shm() {
 	assert((shm_id = shmget(key_get('A'), SHM_SIZE, IPC_CREAT /*| IPC_EXCL*/ | 0644)) != -1, "Could not create shared memory area");
 	assert((shm = (char*)shmat(shm_id, NULL, 0)) != (void *)-1, "Could not attach shared memory area");
+}
+
+void __print_shm() {
+	int i;
+	printf("memory:\n");
+	printf("%d|", ((int *)shm)[0]);
+	printf("%d|", ((int *)shm)[1]);
+	for(i=2*sizeof(int); i<SHM_SIZE; i++){
+		printf("%c|", ((string)shm)[i]);
+	}
+	printf("\n");
 }

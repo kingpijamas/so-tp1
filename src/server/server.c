@@ -14,7 +14,7 @@ static void __recv(void * buf, int len);
 static void __send(int to_id, void * buf, int len);
 static void __assert(int ret_status);
 static void __srv_stop(int x);
-static void __crash();
+static void __srv_crash();
 
 void srv_start() { //TODO: signal()!
 	int from_id;
@@ -26,9 +26,13 @@ void srv_start() { //TODO: signal()!
 
 	signal(SIGINT, __srv_stop);
 	while(true) {
+		/*IMPORTANT:
+		Do this, and nothing will work =) (if the srv's asleep, 
+		the scheduler gives priority to the clt and everything fails)
+		
 		printf("Srv: Sleeping...\n");
 		usleep(700 * 1000);
-		printf("Srv: ...Woke up\n");
+		printf("Srv: ...Woke up\n");*/
 		printf("Srv: Reading caller_id\n");
 		__recv(&from_id, sizeof(int));
 		printf("Srv:\t< id = %d ...\n", from_id);
@@ -147,7 +151,7 @@ void __send(int to_id, void * buf, int len) {
 void __assert(int ret_status) { //TODO: check
 	if (ret_status != OK) {
 		printf("Srv: Could not start (%d)\n", ret_status);
-		__crash();
+		__srv_crash();
 	}
 }
 
@@ -159,7 +163,7 @@ void __srv_stop(int x) {
 	exit(0);
 }
 
-void __crash() {
+void __srv_crash() {
 	ipc_close(SRV_ID);
 	exit(1);
 }

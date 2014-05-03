@@ -27,6 +27,7 @@ msg_ret_code msg_serialize_error_resp(msg_type type, int code, void * buf) {
 }
 
 msg_ret_code msg_deserialize_product(void * buf, Product * product) {
+	//*product = ((Product *) buf)[0];
 	memcpy(product, buf, sizeof(Product));
 	printf("Deserialized { name: %s, quantity: %d }\n", product->name, product->quantity);
 	return OK;
@@ -46,9 +47,9 @@ msg_ret_code msg_deserialize_code(void * buf, int * code) {
 
 msg_ret_code __serialize_msg(int from_id, msg_type type, void * attr, int attr_type_size, void * buf) {	
 	memcpy(buf, &from_id, sizeof(int));
-	memcpy(buf+sizeof(int), &type, sizeof(msg_type));
-	memcpy(buf+sizeof(int)+sizeof(msg_type), attr, attr_type_size);
-	return OK;
+	//memcpy(buf+sizeof(int), &type, sizeof(msg_type));
+	//memcpy(buf+sizeof(int)+sizeof(msg_type), attr, attr_type_size);
+	return __serialize_resp(type, attr, attr_type_size, buf+sizeof(int));
 }
 
 msg_ret_code __serialize_resp(msg_type type, void * attr, int attr_type_size, void * buf) {

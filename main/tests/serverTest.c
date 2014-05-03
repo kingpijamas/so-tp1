@@ -43,7 +43,8 @@ int main(int argc, char **argv) {
 			break;
 		case 0: /* child */
 			usleep(1000);
-			passed = __write_product("rubber", 80, false)
+			passed = /*__get_product("pen", false)
+				&&*/__write_product("rubber", 80, false)
 				&& __remove_product("rubber", false)
 				&& __get_product("rubber", true)
 				&& __write_product("rubber", 1, false);
