@@ -9,25 +9,29 @@ static void __handle_get_product(int client_id);
 static void __handle_write_product(int client_id);
 static void __handle_remove_product(int client_id);
 static void __handle_invalid_call(int client_id);
-static void __send_err_resp(int client_id, boolean status, int code);
+static void __send_resp(int client_id, boolean status, int code);
 static void __recv(void * buf, int len);
 static void __send(int to_id, void * buf, int len);
 static void __assert(int ret_status);
-static void __stop(int x);
-static void __crash();
+static void __srv_stop(int x);
+static void __srv_crash();
 
 void srv_start() { //TODO: signal()!
 	int from_id;
 	msg_type type;
 
 	__assert(db_init());
-	__assert(ipc_init(SRV_ID));
+	__assert(ipc_connect(SRV_ID, 0));
 
-	signal(SIGINT, __stop);
+	signal(SIGINT, __srv_stop);
 	while(true) {
+		/*IMPORTANT:
+		Do this, and nothing will work =) (if the srv's asleep, 
+		the scheduler gives priority to the clt and everything fails)
+		
 		printf("Srv: Sleeping...\n");
 		usleep(700 * 1000);
-		printf("Srv: ...Woke up\n");
+		printf("Srv: ...Woke up\n");*/
 		printf("Srv: Reading caller_id\n");
 		__recv(&from_id, sizeof(int));
 		printf("Srv:\t< id = %d ...\n", from_id);
@@ -61,10 +65,11 @@ srv_ret_code srv_get_product(product_name name, Product * productp) {
 	return db_get_product_by_name(name, productp);
 }
 
-srv_ret_code srv_write_product(Product product) {
+srv_ret_code srv_write_product(Product * productp) {
 	int ret;
-	if ((ret = db_update_product(product)) == NO_PRODUCT_FOR_NAME) {
-		ret = db_save_product(product);
+	printf("%s %d\n", productp->name, productp->quantity);
+	if ((ret = db_update_product(*productp)) == NO_PRODUCT_FOR_NAME) {
+		ret = db_save_product(*productp);
 	}
 	return ret;
 }
@@ -89,7 +94,7 @@ void __handle_get_product(int client_id) {
 		__send(client_id, resp, sizeof(product_resp));
 		return;
 	}
-	__send_err_resp(client_id, ERR_RESP, ret);
+	__send_resp(client_id, ERR_RESP, ret);
 }
 
 void __handle_remove_product(int client_id) {
@@ -105,7 +110,7 @@ void __handle_remove_product(int client_id) {
 		&& (ret = srv_remove_product(name)) == OK) {
 		status = OK_RESP;
 	}
-	__send_err_resp(client_id, status, ret);
+	__send_resp(client_id, status, ret);
 }
 
 
@@ -118,21 +123,21 @@ void __handle_write_product(int client_id) {
 	printf("Srv: Reading message body\n");
 	__recv(&msg, sizeof(Product));
 
-	if ((ret = msg_deserialize_product(msg, &product)) == OK 
-		&& (ret = srv_write_product(product)) == OK) {
-		status = OK_RESP;
+	if ((ret = msg_deserialize_product(msg, &product)) == OK
+		&& (ret = srv_write_product(&product)) == OK) {
+			status = OK_RESP;
 	}
-	__send_err_resp(client_id, status, ret);
+	__send_resp(client_id, status, ret);
 }
 
-void __send_err_resp(int client_id, boolean status, int code) {
+void __send_resp(int client_id, boolean status, int code) {
 	char resp[sizeof(error_resp)]; //maybe buffer could be used here
 	msg_serialize_error_resp(status, code, resp);
 	__send(client_id, resp, sizeof(error_resp));
 }
 
 void __handle_invalid_call(int client_id) {
- 	__send_err_resp(client_id, ERR_RESP, INVALID_MSG);
+ 	__send_resp(client_id, ERR_RESP, INVALID_MSG);
 }
 
 void __recv(void * buf, int len) {
@@ -146,18 +151,19 @@ void __send(int to_id, void * buf, int len) {
 void __assert(int ret_status) { //TODO: check
 	if (ret_status != OK) {
 		printf("Srv: Could not start (%d)\n", ret_status);
-		__crash();
+		__srv_crash();
 	}
 }
 
-void __stop(int x) {
+void __srv_stop(int x) {
 	printf("Srv: Stopping... (%d)\n", x);
+	ipc_disconnect(SRV_ID, 0);
 	ipc_close(SRV_ID);
 	printf("Srv: stopped\n");
 	exit(0);
 }
 
-void __crash() {
+void __srv_crash() {
 	ipc_close(SRV_ID);
 	exit(1);
 }

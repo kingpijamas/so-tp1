@@ -3,7 +3,7 @@
 
 #include "common.h"
 
-#define PRODUCT_MAX_NAME_LEN 1000
+#define PRODUCT_MAX_NAME_LEN 15
 
 typedef char product_name[PRODUCT_MAX_NAME_LEN];
 

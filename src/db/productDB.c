@@ -12,7 +12,7 @@ static FILE * __open(string name, const string mode);
 static string __get_path_to_tuple(string name);
 
 static boolean init = false;
-static char buf[BUFFER_SIZE];
+static char buf[DB_BUFFER_SIZE];
 
 
 db_ret_code db_init() {
@@ -56,8 +56,9 @@ db_ret_code db_get_product_by_name(product_name name, Product * productp) {
 	if (!init) {
 		return DB_NOT_INITIALIZED;
 	}
-
+//	printf("Hola moni\n");
 	FILE * file = __open(name, "r");
+//	printf("Hola pepe\n");
 	if (file == NULL) {
 		return NO_PRODUCT_FOR_NAME;
 	}
@@ -72,10 +73,13 @@ db_ret_code db_update_product(Product product) {
 	int getVal;
 	Product originalProduct;
 
+//printf("A\n");
 	if (!init) {
 		return DB_NOT_INITIALIZED;
 	}
+//printf("B\n");
 	getVal = db_get_product_by_name(product.name, &originalProduct);
+//printf("C\n");
 	switch (getVal) {
 		case NO_PRODUCT_FOR_NAME:
 			return NO_PRODUCT_FOR_NAME;
@@ -114,10 +118,20 @@ void __write_new(Product product) {
 }
 
 FILE * __open(product_name name, const string mode) {
-	return fopen(__get_path_to_tuple(name), mode);
+	//printf("<__open\n");
+	FILE * ans = fopen(__get_path_to_tuple(name), mode);
+	//printf("__open/>\n");
+	return ans;
 }
 
 string __get_path_to_tuple(product_name name) {
+	//string param;
+	//printf("<__get_path_to_tuple\n");
+	//param = malloc(strlen(TABLE_PATH)+strlen(name)+2);
 	sprintf(buf, "%s/%s", TABLE_PATH, name); //this should clear the buffer (verify!)
+	//sprintf(param, "%s/%s", TABLE_PATH, name);
+	//printf("%s __get_path_to_tuple/>\n", param);
+	//printf("%s __get_path_to_tuple/>\n", buf);
 	return buf;
+	//return param;
 }

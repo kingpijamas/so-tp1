@@ -1,0 +1,34 @@
+SRV(0): init
+Sem: CONN - Sem val: 0
+Sem: READ - Sem val: 0
+Sem: WRITE - Sem val: 0
+
+SRV(0): connect (SRV(0)<->CLT(0))
+Srv: Reading caller_id
+
+SRV(0): (TRY) recv (SRV<-CLT) (4 bytes)
+Sem: READ - Sem val: 0
+
+CLT(1): connect (CLT(1)<->SRV(0))
+Clt: connected to srv
+Serializing msg { from_id: 1, type: 1, { name: rubber}���[��u�, quantity: 80 } }
+
+CLT(1): (TRY) send (CLT->SRV(0)) "", (1012 bytes)
+Sem: WRITE - Sem val: 1
+
+CLT(1): send (CLT->SRV(0)) "", (1012 bytes)
+Done writing
+Sem: READ - Sem val: 1
+Clt: wrote 1012 bytes of 1012
+
+
+SRV(0): recv (SRV<-CLT) (4 bytes)
+Done reading
+CLT(1): (TRY) recv (CLT<-SRV) (4 bytes)
+Sem: WRITE - Sem val: 1
+Sem: READ - Sem val: 0
+Srv:	< id = 1 ...
+Srv: Reading msg_type
+
+SRV(0): (TRY) recv (SRV<-CLT) (4 bytes)
+Sem: READ - Sem val: 0

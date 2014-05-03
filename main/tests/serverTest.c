@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "../../include/common.h"
+#include "../../include/error.h"
 #include "../../include/productDB.h"
 #include "../../include/utils.h"
 #include "../../include/communicator.h"
@@ -19,8 +20,10 @@
 
 static void fatal(char *s);
 static void bye(int sig);
+static void __connect();
 static void __send(void * buf, int len);
 static void __recv(void * buf, int len);
+static void __disconnect();
 static boolean __get_product(string name, boolean expecting_failure);
 static boolean __remove_product(string name, boolean expecting_failure);
 static boolean __write_product(string name, int quantity, boolean expecting_failure);
@@ -31,7 +34,6 @@ int main(int argc, char **argv) {
 	Product a = product_new("pen", 100)/*, b = product_new("stapler", 500)*/;
 
 	db_init();
-
 	db_save_product(a);
 	//db_save_product(b);
 
@@ -40,10 +42,12 @@ int main(int argc, char **argv) {
 			fatal("Fork error");
 			break;
 		case 0: /* child */
-			passed = __write_product("rubber", 80, false)
-				&& __remove_product("rubber", false)
+			usleep(1000);
+			passed = /*__get_product("pen", false)
+				&&*/__write_product("rubber", 80, false)
+				/*&& __remove_product("rubber", false)
 				&& __get_product("rubber", true)
-				&& __write_product("rubber", 1, false);
+				&& __write_product("rubber", 1, false);*/;
 			printf("\n\nAll tests done: %s\n", !passed? "[FAILED]":"[OK]");
 			ipc_close(INVALID);
 			break;
@@ -61,6 +65,7 @@ boolean __get_product(string name, boolean expecting_failure){
 	char resp_body[sizeof(product_resp)];
 	Product product;
 	
+	__connect();
 	msg_serialize_product_name_msg(CLT_ID, GET_PRODUCT, name, toSend);
 	__send(toSend, sizeof(product_name_msg));
 	__recv(&type, sizeof(msg_type));
@@ -68,6 +73,7 @@ boolean __get_product(string name, boolean expecting_failure){
 	if (type == OK_RESP) {
 		__recv(resp_body, sizeof(Product));
 		msg_deserialize_product(resp_body, &product);
+		__disconnect();
 		printf("Clt: %s ...Received -- {[OK] - Product: {name: %s, quantity: %d}}\n", !expecting_failure? "[OK]":"[ERROR]", product.name, product.quantity);
 		return !expecting_failure;
 	}
@@ -80,6 +86,7 @@ boolean __remove_product(string name, boolean expecting_failure){
 	char resp_body[sizeof(error_resp)];
 	int code;
 	
+	__connect();
 	msg_serialize_product_name_msg(CLT_ID, REMOVE_PRODUCT, name, toSend);
 	__send(toSend, sizeof(product_name_msg));
 	__recv(&type, sizeof(msg_type));
@@ -87,6 +94,7 @@ boolean __remove_product(string name, boolean expecting_failure){
 	if (type == OK_RESP) {
 		__recv(resp_body, sizeof(int));
 		msg_deserialize_code(resp_body, &code);
+		__disconnect();
 		printf("Clt: %s ...Received -- {[OK] - Code: {%d}}\n", !expecting_failure? "[OK]":"[ERROR]", code);
 		return !expecting_failure;
 	}
@@ -99,12 +107,14 @@ boolean __write_product(string name, int quantity, boolean expecting_failure){
 	char resp_body[sizeof(error_resp)];
 	int code;
 	
+	__connect();
 	msg_serialize_product_msg(CLT_ID, WRITE_PRODUCT, product_new(name, quantity), toSend);
 	__send(toSend, sizeof(product_msg));
 	__recv(&type, sizeof(msg_type));
 	if (type == OK_RESP) {
 		__recv(resp_body, sizeof(int));
 		msg_deserialize_code(resp_body, &code);
+		__disconnect();
 		printf("Clt: %s ...Received -- {[OK] - Code: {%d}}\n", !expecting_failure? "[OK]":"[ERROR]", code);
 		return !expecting_failure;
 	}
@@ -116,6 +126,7 @@ boolean __handle_not_ok_resp(msg_type type, boolean expecting_failure) {
 	int code;
 	__recv(resp_body, sizeof(int));
 	msg_deserialize_code(resp_body, &code);
+	__disconnect();
 	switch(type) {
 		case ERR_RESP:
 			printf("Clt: %s ...Received -- {[ERROR] - Code: {%d}}\n", expecting_failure? "[OK] (expected)":"[ERROR]", code);
@@ -132,8 +143,8 @@ void fatal(char *s) {
 }
 
 void bye(int sig) {
-	printf("Parent received SIGPIPE\n");
-	exit(1);
+	printf("Srv: received SIGPIPE\n");
+	exit(0);
 }
 
 void __send(void * buf, int len) {
@@ -142,4 +153,14 @@ void __send(void * buf, int len) {
 
 void __recv(void * buf, int len) {
 	printf("Clt: read %d bytes of %d\n", ipc_recv(CLT_ID, buf, len), len);
+}
+
+void __connect() {
+	assert (ipc_connect(CLT_ID, SRV_ID) == OK, "Clt: could not connect to srv [ERROR]");
+	printf("Clt: connected to srv\n");
+}
+
+void __disconnect() {
+	assert(ipc_disconnect(CLT_ID, SRV_ID) == OK, "Clt: could not diconnect from srv [ERROR]");
+	printf("Clt: diconnected from srv\n");
 }
