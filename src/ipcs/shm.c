@@ -9,8 +9,7 @@
 #include "../../include/rdwrn.h"
 #include "../../include/key.h"
 
-#define SHM_SIZE 2000
-#define SHM_KEY ((key_t) 0x111222)
+#define SHM_SIZE 100
 
 #define SRV_ID 0
 
