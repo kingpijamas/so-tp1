@@ -13,8 +13,7 @@
 
 #define SRV_ID 0
 
-#define SHM_SEM_NUM 3
-
+#define SHM_SEM_NUM 4
 
 static void __get_shm();
 static void __wipe_shm();
@@ -26,10 +25,11 @@ static int shm_id, to_read = -1, read = 0;
 static char * shm;
 
 typedef enum {
-	SEM_READ,
+	SEM_SRV_READ,
+	SEM_CLT_READ,
 	SEM_WRITE,
 	SEM_CONN
-} semaphore;
+} __semaphore;
 
 int ipc_init(int from_id) {
 	switch(from_id) {
@@ -37,6 +37,7 @@ int ipc_init(int from_id) {
 		printf("\nSRV(%d): init\n", from_id);
 		__get_shm();
 		__wipe_shm();
+		__print_shm();
 		semaphore_init(SHM_SEM_NUM, true);
 		__print_all_sem();
 		return OK;
@@ -91,8 +92,16 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 	printf("Done writing\n");
 	__print_shm();
 	
-	semaphore_let(SEM_READ);
-	__print_sem(SEM_READ);
+	switch (from_id) {
+	case SRV_ID:
+		semaphore_let(SEM_CLT_READ);
+		__print_sem(SEM_CLT_READ);
+		break;
+	default:
+		semaphore_let(SEM_SRV_READ);
+		__print_sem(SEM_SRV_READ);
+		break;
+	}
 	//if (from_id != SRV_ID) { //this doesn't either
 	//	semaphore_stop(SEM_READ); //double blocking doesn't work
 	//}
@@ -109,8 +118,16 @@ int ipc_recv(int from_id, void * buf, int len) {
 		break;
 	}
 	if (to_read == -1) {
-		__print_sem(SEM_READ);
-		semaphore_stop(SEM_READ);
+		switch(from_id) {
+		case SRV_ID:
+			__print_sem(SEM_SRV_READ);
+			semaphore_stop(SEM_SRV_READ);
+			break;
+		default:
+			__print_sem(SEM_CLT_READ);
+			semaphore_stop(SEM_CLT_READ);
+			break;
+		}
 	}
 
 	switch(from_id) {
@@ -166,6 +183,7 @@ int ipc_disconnect(int from_id, int to_id) {
 		printf("\nCLT(%d): disconnect\n", from_id);
 		__wipe_shm();
 		semaphore_let(SEM_CONN);
+		semaphore_let(SEM_WRITE);
 		return OK; //fail maybe?
 	}
 }
@@ -174,7 +192,8 @@ int ipc_close(int from_id) {
 	switch(from_id) {
 	case SRV_ID:
 		printf("\nSRV(%d): close\n", from_id);
-		semaphore_destroy(SEM_READ);
+		semaphore_destroy(SEM_SRV_READ);
+		semaphore_destroy(SEM_CLT_READ);
 		semaphore_destroy(SEM_WRITE);
 		semaphore_destroy(SEM_CONN);
 		shmdt(shm);
@@ -192,15 +211,19 @@ void __wipe_shm() {
 
 void __print_all_sem() {
 	__print_sem(SEM_CONN);
-	__print_sem(SEM_READ);
+	__print_sem(SEM_SRV_READ);
+	__print_sem(SEM_CLT_READ);
 	__print_sem(SEM_WRITE);
 }
 
 void __print_sem(int sem_id) {
 	char * name;
 	switch(sem_id) {
-	case SEM_READ:
-		name = "READ";
+	case SEM_SRV_READ:
+		name = "SRV_READ";
+		break;
+	case SEM_CLT_READ:
+		name = "CLT_READ";
 		break;
 	case SEM_WRITE:
 		name = "WRITE";
@@ -209,7 +232,7 @@ void __print_sem(int sem_id) {
 		name = "CONN";
 		break;
 	/*default:
-		printf("\n\n%d is not a valid semaphore id\n\n", sem_id);
+		printf("\n\n%d is not a valid __semaphore id\n\n", sem_id);
 		exit(1);*/
 	}
 	printf("Sem: %s - ", name);

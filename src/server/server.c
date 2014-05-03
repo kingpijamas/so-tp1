@@ -69,8 +69,6 @@ srv_ret_code srv_get_product(product_name name, Product * productp) {
 srv_ret_code srv_write_product(Product * productp) {
 	int ret;
 	printf("%s %d\n", productp->name, productp->quantity);
-	ret = db_update_product(*productp);
-	
 	if ((ret = db_update_product(*productp)) == NO_PRODUCT_FOR_NAME) {
 		ret = db_save_product(*productp);
 	}
@@ -120,29 +118,15 @@ void __handle_remove_product(int client_id) {
 void __handle_write_product(int client_id) {
 	int ret;
 	char msg[sizeof(Product)];
-	/*Product * product = malloc(sizeof(Product));
-	msg_type status=ERR_RESP;
-
-	printf("Srv: Reading message body\n");
-	__recv(&msg, sizeof(Product));
-
-	if ((ret = msg_deserialize_product(msg, product)) == OK) {
-		printf("%s\n", product->name);
-		if ((ret = srv_write_product(product)) == OK) {
-			status = OK_RESP;
-		}
-	}*/
 	Product product;
 	msg_type status=ERR_RESP;
 
 	printf("Srv: Reading message body\n");
 	__recv(&msg, sizeof(Product));
 
-	if ((ret = msg_deserialize_product(msg, &product)) == OK) {
-		//printf("%s\n", product.name);
-		if ((ret = srv_write_product(&product)) == OK) {
+	if ((ret = msg_deserialize_product(msg, &product)) == OK
+		&& (ret = srv_write_product(&product)) == OK) {
 			status = OK_RESP;
-		}
 	}
 	__send_resp(client_id, status, ret);
 }
