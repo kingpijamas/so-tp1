@@ -1,6 +1,7 @@
 #include "../../include/system5_msgqueue.h"
 #define TMP_FOLDER "/tmp"
 #include "../../include/communicator.h"
+#include "../../include/common.h"
 
 
 typedef struct {
@@ -9,8 +10,15 @@ typedef struct {
 } MsgQueuePackage;
 
 #define MSG_SIZE (DATA_SIZE - sizeof(long int))
-
 int ipc_get(int id);
+
+int ipc_connect(int from_id, int to_id){
+	return OK;	
+}
+
+int ipc_disconnect(int from_id, int to_id){
+	return OK;
+}
 
 MsgQueuePackage *newMsgQueuePackage(int id, char* data);
 
@@ -22,7 +30,7 @@ fatal(char *s)
 }
 
 int ipc_init(int from_id) {
-    ipc_close(from_id);
+    // ipc_close(from_id);
 	return 0;
 }
 
@@ -44,13 +52,14 @@ int ipc_get(int key) {
 int ipc_send(int from_id, int to_id, void * buf, int len) {
 	int toIpcId = ipc_get(to_id);
 	MsgQueuePackage *msg = newMsgQueuePackage(from_id, buf);
-	return msgsnd(toIpcId, (void*) msg, MSG_SIZE, IPC_NOWAIT);
+	return msgsnd(toIpcId, (void*) msg, MSG_SIZE,IPC_NOWAIT);
 }
 
 int ipc_rcv(int from_id, void * buf, int len) {
-	int myIpcId = ipc_get(getpid());
+	int myIpcId = ipc_get(from_id);
 	MsgQueuePackage msg;
-	int result = msgrcv(myIpcId, (void *)&msg, MSG_SIZE, from_id, IPC_NOWAIT);
+	//ssize_t msgrcv(int msqid, void *msgp, size_t msgsz, long msgtyp, int msgflg)
+	int result = msgrcv(myIpcId, (void *)&msg, MSG_SIZE, from_id,0);
 	if (result == -1) {
 		return -1;
 	}

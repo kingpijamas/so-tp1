@@ -12,10 +12,16 @@
 #define FIFO_IPC_DIR "/tmp/so-fifo"
 #define FIFO_IPC_SRV_CLT_FULL_NAME FIFO_IPC_DIR"/"FIFO_IPC_NAME("srv","clt")
 #define FIFO_IPC_CLT_SRV_FULL_NAME FIFO_IPC_DIR"/"FIFO_IPC_NAME("clt","srv")
-
 #define ALL_RW S_IRWXU|S_IRWXG|S_IRWXO
-
 static fdesc __connect(string ipc_name, int flags);
+
+int ipc_connect(int from_id, int to_id){
+	return OK;	
+}
+
+int ipc_disconnect(int from_id, int to_id){
+	return OK;
+}
 
 int ipc_init(int from_id) {
 	//since it's a concurrent server, from_id and to_id are ignored here
@@ -38,7 +44,7 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 	return /*writen(*/write(__connect(ipc_name, O_WRONLY), buf, len);
 }
 
-int ipc_recv(int from_id, void * buf, int len) {
+int ipc_rcv(int from_id, void * buf, int len) {
 	//bloquearse si ya hay un ipc funcionando
 	string ipc_name;
 	switch(from_id) {

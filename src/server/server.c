@@ -11,7 +11,7 @@ static void __handle_write_product(int client_id);
 static void __handle_remove_product(int client_id);
 static void __handle_invalid_call(int client_id);
 static void __send_err_resp(int client_id, boolean status, int code);
-static void __recv(void * buf, int len);
+static void __rcv(void * buf, int len);
 static void __send(int to_id, void * buf, int len);
 static void __assert(int ret_status);
 static void __stop(int x);
@@ -30,10 +30,10 @@ void srv_start() { //TODO: signal()!
 		usleep(700 * 1000);
 		printf("Srv: ...Woke up\n");
 		printf("Srv: Reading caller_id\n");
-		__recv(&from_id, sizeof(int));
+		__rcv(&from_id, sizeof(int));
 		printf("Srv:\t< id = %d ...\n", from_id);
 		printf("Srv: Reading msg_type\n");
-		__recv(&type, sizeof(msg_type));
+		__rcv(&type, sizeof(msg_type));
 		printf("Srv:\t... type = %d ", type);
 		switch(type) {
 			case GET_PRODUCT:
@@ -82,7 +82,7 @@ void __handle_get_product(int client_id) {
 	char resp[max(sizeof(product_resp),sizeof(error_resp))]; //maybe buffer could be used here
 
 	printf("Srv: Reading message body\n");
-	__recv(&msg, sizeof(product_name));
+	__rcv(&msg, sizeof(product_name));
 
 	if ((ret = msg_deserialize_product_name(msg, name)) == OK 
 		&& (ret = srv_get_product(name, &product)) == OK) {
@@ -100,7 +100,7 @@ void __handle_remove_product(int client_id) {
 	msg_type status = ERR_RESP;
 
 	printf("Srv: Reading message body\n");
-	__recv(&msg, sizeof(product_name));
+	__rcv(&msg, sizeof(product_name));
 
 	if ((ret = msg_deserialize_product_name(msg, name)) == OK 
 		&& (ret = srv_remove_product(name)) == OK) {
@@ -117,7 +117,7 @@ void __handle_write_product(int client_id) {
 	msg_type status=ERR_RESP;
 
 	printf("Srv: Reading message body\n");
-	__recv(&msg, sizeof(Product));
+	__rcv(&msg, sizeof(Product));
 
 	if ((ret = msg_deserialize_product(msg, &product)) == OK 
 		&& (ret = srv_write_product(product)) == OK) {
@@ -136,7 +136,7 @@ void __handle_invalid_call(int client_id) {
  	__send_err_resp(client_id, ERR_RESP, INVALID_MSG);
 }
 
-void __recv(void * buf, int len) {
+void __rcv(void * buf, int len) {
 	ipc_rcv(SRV_ID, buf, len);	
 }
 

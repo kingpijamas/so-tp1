@@ -20,7 +20,7 @@
 static void fatal(char *s);
 static void bye(int sig);
 static void __send(void * buf, int len);
-static void __recv(void * buf, int len);
+static void __rcv(void * buf, int len);
 static boolean __get_product(string name, boolean expecting_failure);
 static boolean __remove_product(string name, boolean expecting_failure);
 static boolean __write_product(string name, int quantity, boolean expecting_failure);
@@ -63,10 +63,10 @@ boolean __get_product(string name, boolean expecting_failure){
 	
 	msg_serialize_product_name_msg(CLT_ID, GET_PRODUCT, name, toSend);
 	__send(toSend, sizeof(product_name_msg));
-	__recv(&type, sizeof(msg_type));
+	__rcv(&type, sizeof(msg_type));
 	
 	if (type == OK_RESP) {
-		__recv(resp_body, sizeof(Product));
+		__rcv(resp_body, sizeof(Product));
 		msg_deserialize_product(resp_body, &product);
 		printf("Clt: %s ...Received -- {[OK] - Product: {name: %s, quantity: %d}}\n", !expecting_failure? "[OK]":"[ERROR]", product.name, product.quantity);
 		return !expecting_failure;
@@ -82,10 +82,10 @@ boolean __remove_product(string name, boolean expecting_failure){
 	
 	msg_serialize_product_name_msg(CLT_ID, REMOVE_PRODUCT, name, toSend);
 	__send(toSend, sizeof(product_name_msg));
-	__recv(&type, sizeof(msg_type));
+	__rcv(&type, sizeof(msg_type));
 	
 	if (type == OK_RESP) {
-		__recv(resp_body, sizeof(int));
+		__rcv(resp_body, sizeof(int));
 		msg_deserialize_code(resp_body, &code);
 		printf("Clt: %s ...Received -- {[OK] - Code: {%d}}\n", !expecting_failure? "[OK]":"[ERROR]", code);
 		return !expecting_failure;
@@ -101,9 +101,9 @@ boolean __write_product(string name, int quantity, boolean expecting_failure){
 	
 	msg_serialize_product_msg(CLT_ID, WRITE_PRODUCT, product_new(name, quantity), toSend);
 	__send(toSend, sizeof(product_msg));
-	__recv(&type, sizeof(msg_type));
+	__rcv(&type, sizeof(msg_type));
 	if (type == OK_RESP) {
-		__recv(resp_body, sizeof(int));
+		__rcv(resp_body, sizeof(int));
 		msg_deserialize_code(resp_body, &code);
 		printf("Clt: %s ...Received -- {[OK] - Code: {%d}}\n", !expecting_failure? "[OK]":"[ERROR]", code);
 		return !expecting_failure;
@@ -114,7 +114,7 @@ boolean __write_product(string name, int quantity, boolean expecting_failure){
 boolean __handle_not_ok_resp(msg_type type, boolean expecting_failure) {
 	char resp_body[sizeof(int)];
 	int code;
-	__recv(resp_body, sizeof(int));
+	__rcv(resp_body, sizeof(int));
 	msg_deserialize_code(resp_body, &code);
 	switch(type) {
 		case ERR_RESP:
@@ -140,6 +140,6 @@ void __send(void * buf, int len) {
 	printf("Clt: wrote %d bytes of %d\n", ipc_send(CLT_ID, SRV_ID, buf, len), len);	
 }
 
-void __recv(void * buf, int len) {
-	printf("Clt: read %d bytes of %d\n", ipc_recv(CLT_ID, buf, len), len);
+void __rcv(void * buf, int len) {
+	printf("Clt: read %d bytes of %d\n", ipc_rcv(CLT_ID, buf, len), len);
 }
