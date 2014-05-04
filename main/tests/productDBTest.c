@@ -3,7 +3,6 @@
 #include "../../include/productDB.h"
 #include "../../include/common.h"
 #include "../../include/product.h"
-#include "../../include/client.h"
 
 int main(void) {
 	int testAns;

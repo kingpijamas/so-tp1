@@ -12,7 +12,8 @@ int main(){
 	printf("%s\n","Insert name of new product");
 	gets(product);
 	printf("%s\n","Insert quantity");
-	scanf("%i",&quantity);getchar();
+	scanf("%i",&quantity);
+	getchar();
 	
 	ret=clt_add_product(product,quantity);
 	__return(ret);
