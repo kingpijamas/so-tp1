@@ -25,7 +25,6 @@ static db_ret_code __delete_product(product_name name);
 
 
 
-
 static boolean __init = false;
 static char __buf[DB_BUFFER_SIZE];
 
