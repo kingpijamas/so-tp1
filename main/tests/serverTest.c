@@ -13,6 +13,7 @@
 #include "../../include/server.h"
 #include "../../include/msg.h"
 
+#define SRV_ID 0
 #define CLT_ID 1
 #define INVALID -1
 
@@ -74,7 +75,7 @@ boolean __get_product(string name, boolean expecting_failure){
 		__recv(resp_body, sizeof(Product));
 		msg_deserialize_product(resp_body, &product);
 		__disconnect();
-		printf("Clt: %s ...Received -- {[OK] - Product: {name: %s, quantity: %d}}\n", !expecting_failure? "[OK]":"[ERROR]", product.name, product.quantity);
+		printf("Client: %s ...Received -- {[OK] - Product: {name: %s, quantity: %d}}\n", !expecting_failure? "[OK]":"[ERROR]", product.name, product.quantity);
 		return !expecting_failure;
 	}
 	return __handle_not_ok_resp(type, expecting_failure);
@@ -95,7 +96,7 @@ boolean __remove_product(string name, boolean expecting_failure){
 		__recv(resp_body, sizeof(int));
 		msg_deserialize_code(resp_body, &code);
 		__disconnect();
-		printf("Clt: %s ...Received -- {[OK] - Code: {%d}}\n", !expecting_failure? "[OK]":"[ERROR]", code);
+		printf("Client: %s ...Received -- {[OK] - Code: {%d}}\n", !expecting_failure? "[OK]":"[ERROR]", code);
 		return !expecting_failure;
 	}
 	return __handle_not_ok_resp(type, expecting_failure);
@@ -115,7 +116,7 @@ boolean __write_product(string name, int quantity, boolean expecting_failure){
 		__recv(resp_body, sizeof(int));
 		msg_deserialize_code(resp_body, &code);
 		__disconnect();
-		printf("Clt: %s ...Received -- {[OK] - Code: {%d}}\n", !expecting_failure? "[OK]":"[ERROR]", code);
+		printf("Client: %s ...Received -- {[OK] - Code: {%d}}\n", !expecting_failure? "[OK]":"[ERROR]", code);
 		return !expecting_failure;
 	}
 	return __handle_not_ok_resp(type, expecting_failure);
@@ -129,10 +130,10 @@ boolean __handle_not_ok_resp(msg_type type, boolean expecting_failure) {
 	__disconnect();
 	switch(type) {
 		case ERR_RESP:
-			printf("Clt: %s ...Received -- {[ERROR] - Code: {%d}}\n", expecting_failure? "[OK] (expected)":"[ERROR]", code);
+			printf("Client: %s ...Received -- {[ERROR] - Code: {%d}}\n", expecting_failure? "[OK] (expected)":"[ERROR]", code);
 			return expecting_failure;
 		default:
-			printf("Clt: [ERROR] (type: %d)\n", type);
+			printf("Client: [ERROR] (type: %d)\n", type);
 			return false;
 	}
 }
@@ -148,19 +149,19 @@ void bye(int sig) {
 }
 
 void __send(void * buf, int len) {
-	printf("Clt: wrote %d bytes of %d\n", ipc_send(CLT_ID, SRV_ID, buf, len), len);	
+	printf("Client: wrote %d bytes of %d\n", ipc_send(CLT_ID, SRV_ID, buf, len), len);	
 }
 
 void __recv(void * buf, int len) {
-	printf("Clt: read %d bytes of %d\n", ipc_recv(CLT_ID, buf, len), len);
+	printf("Client: read %d bytes of %d\n", ipc_recv(CLT_ID, buf, len), len);
 }
 
 void __connect() {
-	assert (ipc_connect(CLT_ID, SRV_ID) == OK, "Clt: could not connect to srv [ERROR]");
-	printf("Clt: connected to srv\n");
+	assert (ipc_connect(CLT_ID, SRV_ID) == OK, "Client: could not connect to srv [ERROR]");
+	printf("Client: connected to srv\n");
 }
 
 void __disconnect() {
-	assert(ipc_disconnect(CLT_ID, SRV_ID) == OK, "Clt: could not diconnect from srv [ERROR]");
-	printf("Clt: diconnected from srv\n");
+	assert(ipc_disconnect(CLT_ID, SRV_ID) == OK, "Client: could not diconnect from srv [ERROR]");
+	printf("Client: diconnected from srv\n");
 }
