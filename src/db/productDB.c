@@ -5,7 +5,7 @@ static FILE * __open(string name, const string mode);
 static string __get_path_to_tuple(string name);
 
 static boolean init = false;
-static char buf[BUFFER_SIZE];
+static char buf[DB_BUFFER_SIZE];
 
 static flock __init_flock();
 static void __lock(int fd, flock * flptr);
@@ -184,17 +184,18 @@ void __write_new(Product product, client_action action, FILE * file, flock * flp
 }
 
 FILE * __open(product_name name, const string mode) {
-	return fopen(__get_path_to_tuple(name), mode);
+	FILE * ans = fopen(__get_path_to_tuple(name), mode);
+	return ans;
 }
 
 string __get_path_to_tuple(product_name name) {
-	sprintf(buf, "%s/%s", TABLE_PATH, name); //this should clear the buffer (verify!)
+	sprintf(buf, "%s/%s", TABLE_PATH, name);
 	return buf;
 }
 
 flock __init_flock(){
 	/* flock = {l_type l_whence, l_start, l_len, l_pid} */
-	flock fl={F_RDLCK,SEEK_SET,0,0,0};
+	flock fl = {F_RDLCK,SEEK_SET, 0, 0, 0};
 	return fl;
 }
 
@@ -237,4 +238,5 @@ void __unlock(int fd, flock * flptr){
 		perror("fcntrl");
 		exit(1);
 	}
+	//return param;
 }

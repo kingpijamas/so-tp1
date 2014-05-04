@@ -15,7 +15,7 @@
 #define TABLE_NAME "product"
 
 #define TABLE_PATH	DB_ROOT_PATH"/"TABLE_NAME
-#define BUFFER_SIZE 100
+#define DB_BUFFER_SIZE 100
 
 typedef enum {
 	DB_NOT_INITIALIZED = OK+1,
