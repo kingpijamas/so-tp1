@@ -13,7 +13,7 @@
 #include "../../include/server.h"
 #include "../../include/msg.h"
 
-#define SRV_ID 0
+
 #define CLT_ID 1
 #define INVALID_ID -1
 

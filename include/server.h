@@ -7,7 +7,7 @@
 #include "productDB.h"
 #include "msg.h"
 
-#define SRV_ID 0
+
 
 typedef enum {
 	INVALID_MSG = OK+1

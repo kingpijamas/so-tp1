@@ -14,7 +14,6 @@ static string __get_path_to_tuple(string name);
 static boolean init = false;
 static char buf[DB_BUFFER_SIZE];
 
-
 db_ret_code db_init() {
 	if (init) { // maybe print that it was initialized several times, but it's entirely not critical
 		return OK;
