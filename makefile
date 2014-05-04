@@ -20,9 +20,10 @@ FILES = $(shell find $(DIRS) -name '*.c') $(CLIENTS)/$(CLIENT) $(IPCS)/$(IPC) $(
 
 OUT_EXE = tp
 COPTS = -Wall -g
+MQUEUE= -lrt
 
 tp:
-	$(CC) $(COPTS) -o $(OUT_EXE) $(FILES)
+	$(CC) $(COPTS) -o $(OUT_EXE) $(FILES) $(MQUEUE)
 
 clean:
 	-rm -f $(OUT_EXE)

@@ -9,6 +9,9 @@
 #include "../../include/utils.h"
 #include "../../include/communicator.h"
 #include "../../include/semaphore.h"
+// #include <fcntl.h>           /* For O_* constants */
+// #include <sys/stat.h>        /* For mode constants */
+// #include <mqueue.h>
 
 #define SRV_ID 0
 #define CLT_ID 1
@@ -19,6 +22,7 @@
 #define SRV_RESP_LEN 2
 
 #define SYNC_SEM -1
+
 
 static void __fatal(char *s);
 static void __bye(int sig);
@@ -72,7 +76,7 @@ int main(int argc, char **argv) {
 			while ( messages[i]!=NULL ) {
 				printf("Parent: about to read\n");
 				ipc_rcv(SRV_ID, buf, strlen(messages[i]));
-				printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", strlen(messages[i]), buf, messages[i]);
+				printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", (int)strlen(messages[i]), buf, messages[i]);
 				if (strneq(messages[i], buf, strlen(messages[i]))) {
 					printf("Parent: [OK]\n");
 					ipc_send(SRV_ID, CLT_ID, OK_MSG, SRV_RESP_LEN);

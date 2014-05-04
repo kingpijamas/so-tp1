@@ -3,7 +3,7 @@
 
 #include <sys/types.h>
 
-ssize_t readn(int fd, void *buf, size_t len);
-ssize_t writen(int fd, const void *buf, size_t len);
+ssize_t freadn(int fd, void *vptr, size_t n);
+ssize_t fwriten(int fd, const void *vptr, size_t n);
 
 #endif
