@@ -40,6 +40,7 @@ int ipc_init(int from_id) {
 		__print_shm();
 		semaphore_init(SHM_SEM_NUM, true);
 		__print_all_sem();
+		semaphore_let(SEM_CONN);
 		return OK;
 	default:
 		printf("\nCLT(%d): init\n", from_id);
@@ -52,7 +53,6 @@ int ipc_connect(int from_id, int to_id) { // should fail when there is no server
 	case SRV_ID:
 		printf("\nSRV(%d): connect (SRV(%d)<->CLT(%d))\n", from_id, from_id, to_id);
 		semaphore_let(SEM_WRITE);
-		semaphore_let(SEM_CONN);
 		return OK; // it's like an accept
 	default:
 		printf("\nCLT(%d): connect (CLT(%d)<->SRV(%d))\n", from_id, from_id, to_id);
@@ -183,7 +183,6 @@ int ipc_disconnect(int from_id, int to_id) {
 		printf("\nCLT(%d): disconnect\n", from_id);
 		__wipe_shm();
 		semaphore_let(SEM_CONN);
-		semaphore_let(SEM_WRITE);
 		return OK; //fail maybe?
 	}
 }
@@ -240,8 +239,8 @@ void __print_sem(int sem_id) {
 }
 
 void __get_shm() {
-	assert((shm_id = shmget(key_get('A'), SHM_SIZE, IPC_CREAT /*| IPC_EXCL*/ | 0644)) != -1, "Could not create shared memory area");
-	assert((shm = (char*)shmat(shm_id, NULL, 0)) != (void *)-1, "Could not attach shared memory area");
+	verify((shm_id = shmget(key_get('A'), SHM_SIZE, IPC_CREAT /*| IPC_EXCL*/ | 0644)) != -1, "Could not create shared memory area");
+	verify((shm = (char*)shmat(shm_id, NULL, 0)) != (void *)-1, "Could not attach shared memory area");
 }
 
 void __print_shm() {

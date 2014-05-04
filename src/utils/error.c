@@ -1,6 +1,6 @@
 #include "../../include/error.h"
 
-void assert(boolean val, string error_text) {
+void verify(boolean val, string error_text) {
 	if (!val) {
 		fail(error_text);
 	}

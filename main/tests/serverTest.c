@@ -15,7 +15,7 @@
 
 #define SRV_ID 0
 #define CLT_ID 1
-#define INVALID -1
+#define INVALID_ID -1
 
 #define SRV_RESP_LEN 2
 
@@ -42,17 +42,17 @@ int main(int argc, char **argv) {
 		case -1:
 			fatal("Fork error");
 			break;
-		case 0: /* child */
+		case 0: /* child (client) */
 			usleep(1000);
-			passed = /*__get_product("pen", false)
-				&&*/__write_product("rubber", 80, false)
-				/*&& __remove_product("rubber", false)
+			passed = /*__get_product("pen", false)*/
+				__write_product("rubber", 80, false)
+				&& __remove_product("rubber", false)
 				&& __get_product("rubber", true)
-				&& __write_product("rubber", 1, false);*/;
+				&& __write_product("rubber", 1, false);
 			printf("\n\nAll tests done: %s\n", !passed? "[FAILED]":"[OK]");
-			ipc_close(INVALID);
+			ipc_close(CLT_ID);
 			break;
-		default: /* parent */
+		default: /* parent (server) */
 			signal(SIGPIPE, bye);
 			srv_start();
 			break;
@@ -157,11 +157,11 @@ void __recv(void * buf, int len) {
 }
 
 void __connect() {
-	assert (ipc_connect(CLT_ID, SRV_ID) == OK, "Client: could not connect to srv [ERROR]");
+	verify(ipc_connect(CLT_ID, SRV_ID) == OK, "Client: could not connect to srv [ERROR]");
 	printf("Client: connected to srv\n");
 }
 
 void __disconnect() {
-	assert(ipc_disconnect(CLT_ID, SRV_ID) == OK, "Client: could not diconnect from srv [ERROR]");
+	verify(ipc_disconnect(CLT_ID, SRV_ID) == OK, "Client: could not diconnect from srv [ERROR]");
 	printf("Client: diconnected from srv\n");
 }

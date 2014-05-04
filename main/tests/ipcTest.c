@@ -64,11 +64,11 @@ int main(int argc, char **argv) {
 			//printf("\nPadre:\n");
 			signal(SIGPIPE, __bye);
 			ipc_init(SRV_ID);
-			ipc_connect(SRV_ID, INVALID);
+			
 			//semaphore_let(SYNC_SEM);
 			//printf("\nEntro padre\n");
-
 			while ( messages[i]!=NULL ) {
+				ipc_connect(SRV_ID, INVALID);
 				//printf("Parent: about to read\n");
 				ipc_recv(SRV_ID, buf, strlen(messages[i]));
 				//printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", strlen(messages[i]), buf, messages[i]);
@@ -80,8 +80,10 @@ int main(int argc, char **argv) {
 					ipc_send(SRV_ID, CLT_ID, NOT_OK_MSG, SRV_RESP_LEN);
 					//exit(1);
 				}
+				ipc_disconnect(SRV_ID, INVALID);
 				i++;
 			}
+
 			usleep(1000);
 			//semaphore_stop(SYNC_SEM);
 			ipc_close(SRV_ID);

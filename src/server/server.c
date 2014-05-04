@@ -5,6 +5,8 @@
 #include <signal.h>
 #include <unistd.h>
 
+#define SRV_INVALID_ID -1
+
 static void __handle_get_product(int client_id);
 static void __handle_write_product(int client_id);
 static void __handle_remove_product(int client_id);
@@ -12,7 +14,7 @@ static void __handle_invalid_call(int client_id);
 static void __send_resp(int client_id, boolean status, int code);
 static void __recv(void * buf, int len);
 static void __send(int to_id, void * buf, int len);
-static void __assert_start(int ret_status);
+static void __verify_start(int ret_status);
 static void __srv_stop(int x);
 static void __srv_crash();
 
@@ -21,9 +23,9 @@ void srv_start() { //TODO: signal()!
 	msg_type type;
 
 	printf("Server: starting...\n");
-	__assert_start(db_init());
-	__assert_start(ipc_init(SRV_ID));
-	__assert_start(ipc_connect(SRV_ID, 0));
+	__verify_start(db_init());
+	__verify_start(ipc_init(SRV_ID));
+	__verify_start(ipc_connect(SRV_ID, 0));
 	printf("Server: started\n");
 
 	signal(SIGINT, __srv_stop);
@@ -61,6 +63,7 @@ void srv_start() { //TODO: signal()!
 				__handle_invalid_call(from_id);
 				break;
 		}
+		ipc_disconnect(SRV_ID, SRV_INVALID_ID);
 	}
 }
 
@@ -133,15 +136,14 @@ void __handle_write_product(int client_id) {
 	__send_resp(client_id, status, ret);
 }
 
+void __handle_invalid_call(int client_id) {
+ 	__send_resp(client_id, ERR_RESP, INVALID_MSG);
+}
+
 void __send_resp(int client_id, boolean status, int code) {
 	char resp[sizeof(error_resp)]; //maybe buffer could be used here
 	msg_serialize_error_resp(status, code, resp);
 	__send(client_id, resp, sizeof(error_resp));
-	ipc_disconnect(SRV_ID, 0);
-}
-
-void __handle_invalid_call(int client_id) {
- 	__send_resp(client_id, ERR_RESP, INVALID_MSG);
 }
 
 void __recv(void * buf, int len) {
@@ -152,7 +154,7 @@ void __send(int to_id, void * buf, int len) {
 	ipc_send(SRV_ID, to_id, buf, len);	
 }
 
-void __assert_start(int ret_status) { //TODO: check
+void __verify_start(int ret_status) { //TODO: check
 	if (ret_status != OK) {
 		printf("Server: Could not start (%d)\n", ret_status);
 		__srv_crash();
@@ -161,7 +163,7 @@ void __assert_start(int ret_status) { //TODO: check
 
 void __srv_stop(int x) {
 	printf("Server: Stopping... (%d)\n", x);
-	ipc_disconnect(SRV_ID, 0);
+	ipc_disconnect(SRV_ID, SRV_INVALID_ID);
 	ipc_close(SRV_ID);
 	printf("Server: stopped\n");
 	exit(0);

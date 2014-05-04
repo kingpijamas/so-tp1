@@ -22,7 +22,7 @@
 static void __set_srv_socket(int from_id);
 static boolean __failed(int res);
 static int __get_conn_socket(int from_id);
-static void __assert(int res, string err_text);
+static void __verify(int res, string err_text);
 
 static struct addrinfo hints, *res;
 static struct sockaddr_storage their_addr;
@@ -36,8 +36,8 @@ int ipc_init(int from_id) {
 	case SRV_ID:
 		ipc_close(from_id);
 		__set_srv_socket(from_id);
-		__assert(bind(__srv_socket, res->ai_addr, res->ai_addrlen), "Bind error");
-		__assert(listen(__srv_socket, BACKLOG), "Listen error");
+		__verify(bind(__srv_socket, res->ai_addr, res->ai_addrlen), "Bind error");
+		__verify(listen(__srv_socket, BACKLOG), "Listen error");
 		return OK;
 	default:
 		return OK;
@@ -51,7 +51,7 @@ int ipc_connect(int from_id, int to_id) {
 		return OK;
 	default:
 		__set_srv_socket(from_id);
-		__assert(connect(__srv_socket, res->ai_addr, res->ai_addrlen), "Connection error");
+		__verify(connect(__srv_socket, res->ai_addr, res->ai_addrlen), "Connection error");
 		return OK;
 	}
 }
@@ -61,7 +61,7 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 
 	printf("%s: writing to %d...\n", from_id == SRV_ID? "Server":"Client", conn_socket);
 	for (written = 0; written < len; written += send_resp) {
-		__assert(send_resp = send(conn_socket, buf+written, len-written, 0), "Send error");
+		__verify(send_resp = send(conn_socket, buf+written, len-written, 0), "Send error");
 		if (send_resp == 0) {
 			return written;
 		}
@@ -74,14 +74,14 @@ int ipc_recv(int from_id, void * buf, int len) {
 
 	if (from_id == SRV_ID && __get_conn_socket(from_id) == INVALID) {
 		addr_size = sizeof(their_addr);
-		__assert(__conn_socket = accept(__srv_socket, (struct sockaddr *)&their_addr, &addr_size), "Accept error");	
+		__verify(__conn_socket = accept(__srv_socket, (struct sockaddr *)&their_addr, &addr_size), "Accept error");	
 	}
 
 	conn_socket = __get_conn_socket(from_id);
 	printf("%s: receiving from %d...\n", from_id == SRV_ID? "Server":"Client", conn_socket);
 	for (read = 0; read < len; read+=read_resp) {
 		//printf("read=%d\n", read);
-		__assert(read_resp = recv(conn_socket, buf+read, len-read, 0), "Read error");
+		__verify(read_resp = recv(conn_socket, buf+read, len-read, 0), "Read error");
 		if (read_resp == 0) {
 			return read;
 		}
@@ -120,16 +120,16 @@ void __set_srv_socket(int from_id) {
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
-	__assert(getaddrinfo(SRV_ADDRESS, SRV_PORT, &hints, &res), "Socket creation error");
-	__assert(__srv_socket = socket(res->ai_family, res->ai_socktype, res->ai_protocol), "Socket creation error");
+	__verify(getaddrinfo(SRV_ADDRESS, SRV_PORT, &hints, &res), "Socket creation error");
+	__verify(__srv_socket = socket(res->ai_family, res->ai_socktype, res->ai_protocol), "Socket creation error");
 }
 
 boolean __failed(int res) {
 	return res == -1;
 }
 
-void __assert(int res, string err_text) {
-	assert(!__failed(res), err_text);
+void __verify(int res, string err_text) {
+	verify(!__failed(res), err_text);
 }
 
 int __get_conn_socket(int from_id) {

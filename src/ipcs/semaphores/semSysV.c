@@ -27,7 +27,7 @@ void semaphore_init(int sem_n, boolean creat) {
 		error_text = "Failure creating semaphore(s)";
 		flags = flags | IPC_CREAT | O_EXCL;
 	}
-	assert((__sems_id = semget(key_get('S'), sem_n, flags)) != -1, error_text);
+	verify((__sems_id = semget(key_get('S'), sem_n, flags)) != -1, error_text);
 	__sem_n = sem_n;
 	if (creat) {
 		__wipe_sems();
@@ -36,12 +36,12 @@ void semaphore_init(int sem_n, boolean creat) {
 
 void semaphore_let(int sem_id) {
 	//printf("let: __sems_id:%d, __sem_n:%d, sem_id:%d\n", __sems_id, __sem_n, sem_id);
-	assert(__update_sem(sem_id, +1) != -1, "Failure unlocking semaphore");
+	verify(__update_sem(sem_id, +1) != -1, "Failure unlocking semaphore");
 }
 
 void semaphore_stop(int sem_id) {
 	//printf("stop: __sems_id:%d, __sem_n:%d, sem_id:%d\n", __sems_id, __sem_n, sem_id);
-	assert(__update_sem(sem_id, -1) != -1, "Failure waiting at semaphore");
+	verify(__update_sem(sem_id, -1) != -1, "Failure waiting at semaphore");
 }
 
 void semaphore_destroy(int sem_id) {

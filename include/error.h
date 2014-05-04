@@ -7,6 +7,6 @@
 #include <stdlib.h>
 
 void fail(string error_text);
-void assert(boolean val, string error_text);
+void verify(boolean val, string error_text);
 
 #endif
