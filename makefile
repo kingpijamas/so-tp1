@@ -10,16 +10,15 @@ IPCS = $(SRC)/ipcs
 SEMS = $(IPCS)/semaphores
 UTILS = $(SRC)/utils
 MSG = $(SRC)/msg
-RUN = $(MAIN)/$(MAIN_FILE)
 
-MAIN_FILE = tests/ipcTest.c
+RUN = tests/ipcTest.c
 IPC = fifo.c
 CLIENT = client.c
 SEM = semPosix.c
 DB = productDB.c
 
 DIRS = $(MODEL) $(UTILS) $(SERVER) $(MSG)
-FILES = $(shell find $(DIRS) -name '*.c') $(CLIENTS)/$(CLIENT) $(DBS)/$(DB) $(IPCS)/$(IPC) $(SEMS)/$(SEM) $(RUN)
+FILES = $(shell find $(DIRS) -name '*.c') $(CLIENTS)/$(CLIENT) $(DBS)/$(DB) $(IPCS)/$(IPC) $(SEMS)/$(SEM) $(MAIN)/$(RUN)
 
 OUT_EXE = tp
 COPTS = -Wall -g
