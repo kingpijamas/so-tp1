@@ -11,65 +11,115 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define DATA_SIZE 100
-#define MSG_SIZE (DATA_SIZE - sizeof(long int))
+#define MSQ_MSG_LEN 200
 
 typedef struct {
-	long fromId;
-	char data[DATA_SIZE];
-} __msgq_package;
+	long from_id;
+	int len;
+	char data[MSQ_MSG_LEN];
+} __msq_pkg;
 
-static int ipc_get(int id);
-static __msgq_package * __msgq_package_new(int id, char* data);
+static int __get_msq(int id);
+
+static int __to_read = -1, __read = 0;
+static char __msg_data_buf[MSQ_MSG_LEN];
+
 
 int ipc_init(int from_id) {
     ipc_close(from_id);
+    printf("%s: Initializing...\n", (from_id == SRV_ID)? "Srv":"Clt");
 	return OK;
 }
 
 int ipc_connect(int from_id, int to_id){
+	printf("%s: Connecting...\n", (from_id == SRV_ID)? "Srv":"Clt");
+	__to_read = -1;
+	__read = 0;
 	return OK;
 }
 
-int ipc_get(int key) {
-	key_t ipcId;
-	int id;
-	
-	verify((ipcId = key_get('Q')) != (key_t)-1, "Error writing msg - ftok");
-	verify((id = msgget(ipcId, IPC_CREAT | 0666)) >= 0, "Error writing msg - msgget");
-	return id;
-}
-
 int ipc_send(int from_id, int to_id, void * buf, int len) {
-	int toIpcId = ipc_get(to_id);
-	__msgq_package *msg = __msgq_package_new(from_id, buf);
-	return msgsnd(toIpcId, (void*) msg, MSG_SIZE, IPC_NOWAIT);
+	__msq_pkg msg;
+    printf("(Try) %s: Sending %d bytes through %d...\n", (from_id == SRV_ID)? "Srv":"Clt", len, __get_msq(to_id));
+
+	msg.from_id = from_id;
+	msg.len = len;
+	memcpy(msg.data, buf, len);
+
+	printf("%s: Sent %d bytes through %d...\n", (from_id == SRV_ID)? "Srv":"Clt", len, __get_msq(to_id));
+	return msgsnd(__get_msq(to_id), &msg, sizeof(__msq_pkg)-sizeof(long), 0/*IPC_NOWAIT*/);
 }
 
-int ipc_recv(int from_id, void * buf, int len) {
-	int myIpcId = ipc_get(from_id);
-	__msgq_package msg;
-	//ssize_t msgrcv(int msqid, void *msgp, size_t msgsz, long msgtyp, int msgflg)
-	int result = msgrcv(myIpcId, (void *)&msg, MSG_SIZE, from_id,0);
-	if (result == -1) {
-		return -1;
+int ipc_recv(int from_id, void * buf, int len) { // no es lectura buffereada =S
+	__msq_pkg msg;
+
+    printf("(Try) %s: Receiving %d bytes through %d...\n", (from_id == SRV_ID)? "Srv":"Clt", len, __get_msq(from_id));
+	
+	if (__to_read == -1) {
+		verify(msgrcv(__get_msq(from_id), &msg, sizeof(__msq_pkg)-sizeof(long), from_id, 0) != -1, "Receive error");
+		memcpy(__msg_data_buf, msg.data, MSQ_MSG_LEN);
+		__to_read = msg.len;
+		__read = 0;
 	}
-	memcpy(buf, msg.data, DATA_SIZE);
-	return result;
+
+	if (__read + len < MSQ_MSG_LEN) {
+		memcpy(buf, __msg_data_buf+__read, len);
+	} else {
+		memcpy(buf, __msg_data_buf+(__read%MSQ_MSG_LEN), MSQ_MSG_LEN-(__read%MSQ_MSG_LEN));
+		memcpy(buf, __msg_data_buf+(__read%MSQ_MSG_LEN), ((__read+len)-MSQ_MSG_LEN)%MSQ_MSG_LEN);
+	}
+	__read += len;
+
+	if (__read == __to_read) {
+		__to_read = -1;
+		__read = 0;
+		return len;
+	}
+
+
+/*	if (__to_read == -1) {
+		verify(msgrcv(__get_msq(from_id), &msg, sizeof(__msq_pkg)-sizeof(long), from_id, 0) != -1, "Receive error");
+		memcpy(__msg_data_buf, msg.data, MSQ_MSG_LEN);
+		__to_read = msg.len;
+		__read = 0;
+	}
+	
+	if (__read + len < MAX) {
+		memcpy(buf, __msg_data_buf+__read, len);
+	} else {
+		memcpy(buf, __msg_data_buf+(__read%MAX), MAX-(__read%MAX));
+		memcpy(buf, __msg_data_buf+(__read%MAX), ((read+len)-MAX)%MAX);
+	}
+	__read += len;
+
+	if (__read == __to_read) {
+		__to_read = -1;
+		__read = 0;
+		return len;
+	}
+*/
+
+
+    printf("%s: Received %d bytes through %d... \n", (from_id == SRV_ID)? "Srv":"Clt", len, __get_msq(from_id));
+	return len; //da MSG_LEN si esta bien! =S
 }
 
 int ipc_disconnect(int from_id, int to_id){
-	int ipcId = ipc_get(from_id);
-	return msgctl(ipcId, IPC_RMID, (struct msqid_ds *) NULL);
+    printf("%s: Disconnecting... from %d\n", (from_id == SRV_ID)? "Srv":"Clt", __get_msq(from_id));
+	return msgctl(__get_msq(from_id), IPC_RMID, NULL);
 }
 
 int ipc_close(int from_id) {
-	return OK;	
+    printf("%s: Closing...\n", (from_id == SRV_ID)? "Srv":"Clt");
+	return OK;
 }
 
-__msgq_package *__msgq_package_new(int id, char * data) {
-	__msgq_package * msg = malloc(sizeof(__msgq_package));
-	msg->fromId = id;
-	memcpy(msg->data, data, DATA_SIZE);
-	return msg;
+int __get_msq(int id) {
+	key_t key;
+	int msq_id;
+	
+	verify((key = key_get(id)) != (key_t)-1, "Error writing msg - ftok");
+	verify((msq_id = msgget(key, IPC_CREAT | 0666)) != -1, "Error writing msg - msgget");
+	return msq_id;
 }
+

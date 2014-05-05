@@ -68,10 +68,10 @@ boolean __get_product(string name, boolean expecting_failure){
 	__connect();
 	msg_serialize_product_name_msg(CLT_ID, GET_PRODUCT, name, toSend);
 	__send(toSend, sizeof(product_name_msg));
-	__rcv(&type, sizeof(msg_type));
+	__recv(&type, sizeof(msg_type));
 	
 	if (type == OK_RESP) {
-		__rcv(resp_body, sizeof(Product));
+		__recv(resp_body, sizeof(Product));
 		msg_deserialize_product(resp_body, &product);
 		__disconnect();
 		printf("Client: %s ...Received -- {[OK] - Product: {name: %s, quantity: %d}}\n", !expecting_failure? "[OK]":"[ERROR]", product.name, product.quantity);
@@ -89,10 +89,10 @@ boolean __remove_product(string name, boolean expecting_failure){
 	__connect();
 	msg_serialize_product_name_msg(CLT_ID, REMOVE_PRODUCT, name, toSend);
 	__send(toSend, sizeof(product_name_msg));
-	__rcv(&type, sizeof(msg_type));
+	__recv(&type, sizeof(msg_type));
 	
 	if (type == OK_RESP) {
-		__rcv(resp_body, sizeof(int));
+		__recv(resp_body, sizeof(int));
 		msg_deserialize_code(resp_body, &code);
 		__disconnect();
 		printf("Client: %s ...Received -- {[OK] - Code: {%d}}\n", !expecting_failure? "[OK]":"[ERROR]", code);
@@ -110,9 +110,9 @@ boolean __write_product(string name, int quantity, boolean expecting_failure){
 	__connect();
 	msg_serialize_product_msg(CLT_ID, WRITE_PRODUCT, product_new(name, quantity), toSend);
 	__send(toSend, sizeof(product_msg));
-	__rcv(&type, sizeof(msg_type));
+	__recv(&type, sizeof(msg_type));
 	if (type == OK_RESP) {
-		__rcv(resp_body, sizeof(int));
+		__recv(resp_body, sizeof(int));
 		msg_deserialize_code(resp_body, &code);
 		__disconnect();
 		printf("Client: %s ...Received -- {[OK] - Code: {%d}}\n", !expecting_failure? "[OK]":"[ERROR]", code);
@@ -124,7 +124,7 @@ boolean __write_product(string name, int quantity, boolean expecting_failure){
 boolean __handle_not_ok_resp(msg_type type, boolean expecting_failure) {
 	char resp_body[sizeof(int)];
 	int code;
-	__rcv(resp_body, sizeof(int));
+	__recv(resp_body, sizeof(int));
 	msg_deserialize_code(resp_body, &code);
 	__disconnect();
 	switch(type) {
