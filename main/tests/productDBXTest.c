@@ -15,18 +15,18 @@ int main(){
 	scanf("%i",&quantity);
 	getchar();
 	
-	ret=clt_add_product(product,quantity);
+	ret = clt_add_product(product,quantity);
 	__return(ret);
 	printf("\n");
 
-	printf("%s\n","Showing Product");
-	ret=clt_show_product(product);
+	printf("Showing product\n");
+	ret = clt_show_product(product);
 	__return(ret);
 	printf("\n");
 
-	printf("Insert number of %s to deposit ", product);
+	printf("Insert number of '%s's to deposit:\n", product);
 	scanf("%i",&quantity);getchar();
-	ret=clt_deposit_product(product,quantity);
+	ret = clt_deposit_product(product,quantity);
 	__return(ret);
 	// ret=clt_show_product(product);
 	// __return(ret);
@@ -41,7 +41,7 @@ int main(){
 	// printf("\n");
 
 	printf("Deleting %s \n",product);
-	ret=clt_remove_product(product);
+	ret = clt_remove_product(product);
 	__return(ret);
 
 	return 1;
