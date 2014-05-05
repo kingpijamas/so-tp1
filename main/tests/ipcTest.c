@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
 			while ( messages[i]!=NULL && !failed ) {
 				ipc_connect(CLT_ID, SRV_ID);
 				//printf("\nChild: about to send (\"%s\")\n", messages[i]);
-				ipc_send(CLT_ID, 0, messages[i], strlen(messages[i]));
+				ipc_send(CLT_ID, SRV_ID, messages[i], strlen(messages[i]));
 				//printf("Child: msg sent\n");
 				ipc_recv(CLT_ID, buf, SRV_RESP_LEN);
 				//printf("Child: response received (%.*s)\n", SRV_RESP_LEN, buf);

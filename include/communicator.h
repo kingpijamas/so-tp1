@@ -1,7 +1,7 @@
 #ifndef _COMMUNICATOR_
 #define _COMMUNICATOR_
 
-#define SRV_ID 0
+#define SRV_ID 10
 
 int ipc_init(int from_id);
 int ipc_connect(int from_id, int to_id);

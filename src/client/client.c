@@ -13,8 +13,6 @@
 #include "../../include/msg.h"
 #include <sys/types.h>
 
-#define SRV_ID 0
-
 static int __get_product(product_name name, Product * product);
 static int __remove_product(product_name name);
 static int __write_product(product_name name, int quantity);
