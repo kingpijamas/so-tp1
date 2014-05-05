@@ -24,7 +24,7 @@ OUT_EXE = tp
 COPTS = -Wall -g
 
 tp:
-	$(CC) $(COPTS) -o $(OUT_EXE) $(FILES) -pthread -lm
+	$(CC) $(COPTS) -o $(OUT_EXE) $(FILES) -pthread -lmrt
 
 clean:
 	-rm -f $(OUT_EXE)
