@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
 	string messages[] = {"hello", "world!", NULL};
 	// ipc_close(CLT_ID); //debería ser disconnect para msgqueue
 	// ipc_close(SRV_ID); //debería ser disconnect
-	//semaphore_init(SYNC_SEM, true);
+	// semaphore_init(SYNC_SEM, true);
 
 	switch (fork()) {
 		case -1:
@@ -70,7 +70,6 @@ int main(int argc, char **argv) {
 				fclose(file2);
 
 				printf("\nEntro hijo\n");
-				// printf("Client id %d, Srv id %d\n",clientid,srvid);
 				ipc_connect(clientid, srvid);
 				printf("\nChild: about to send (\"%s\")\n", messages[i]);
 				ipc_send(clientid, srvid, messages[i], strlen(messages[i]));
