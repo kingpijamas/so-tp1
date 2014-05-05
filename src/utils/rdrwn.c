@@ -1,80 +1,40 @@
-/*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2010.                   *
-*                                                                         *
-* This program is free software. You may use, modify, and redistribute it *
-* under the terms of the GNU Lesser General Public License as published   *
-* by the Free Software Foundation, either version 3 or (at your option)   *
-* any later version. This program is distributed without any warranty.    *
-* See the files COPYING.lgpl-v3 and COPYING.gpl-v3 for details.           *
-\*************************************************************************/
-
-/*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2010.                   *
-*                                                                         *
-* This program is free software. You may use, modify, and redistribute it *
-* under the terms of the GNU Lesser General Public License as published   *
-* by the Free Software Foundation, either version 3 or (at your option)   *
-* any later version. This program is distributed without any warranty.    *
-* See the files COPYING.lgpl-v3 and COPYING.gpl-v3 for details.           *
-\*************************************************************************/
-
-/* rdwrn.c
-
-   Implementations of readn() and writen().
-*/
-#include <unistd.h>
 #include <errno.h>
-#include "../../include/rdwrn.h"                      /* Declares readn() and writen() */
+#include <unistd.h>
 
-/* Read 'n' bytes from 'fd' into 'buf', restarting after partial
-   reads or interruptions by a signal handlers */
+ssize_t freadn(int fd, void *vptr, size_t n) {
+	size_t nleft;
+	ssize_t nread;
+	char *ptr;
 
-ssize_t readn(int fd, void *buffer, size_t n) {
-    ssize_t numRead;                    /* # of bytes fetched by last read() */
-    size_t totRead;                     /* Total # of bytes read so far */
-    char *buf;
-
-    buf = buffer;                       /* No pointer arithmetic on "void *" */
-    for (totRead = 0; totRead < n; ) {
-        numRead = read(fd, buf, n - totRead);
-
-        if (numRead == 0)               /* EOF */
-            return totRead;             /* May be 0 if this is first read() */
-        if (numRead == -1) {
-            if (errno == EINTR)
-                continue;               /* Interrupted --> restart read() */
-            else
-                return -1;              /* Some other error */
-        }
-        totRead += numRead;
-        buf += numRead;
-    }
-    return totRead;                     /* Must be 'n' bytes if we get here */
+	for (ptr = vptr, nleft = n; nleft > 0; nleft -= nread, ptr += nread){
+		if ((nread = read(fd, ptr, nleft)) < 0) {
+			if (errno == EINTR) {
+				nread = 0;
+			} else {
+				return -1;
+			}
+		} else if (nread == 0) {
+			break;
+		}
+	}
+	return n - nleft;		/* 0 <= result <= n */
 }
 
-/* Write 'n' bytes to 'fd' from 'buf', restarting after partial
-   write or interruptions by a signal handlers */
+ssize_t fwriten(int fd, const void *vptr, size_t n) {
+	size_t nleft;
+	ssize_t nwritten;
+	const char *ptr;
 
-ssize_t writen(int fd, const void *buffer, size_t n) {
-    ssize_t numWritten;                 /* # of bytes written by last write() */
-    size_t totWritten;                  /* Total # of bytes written so far */
-    const char *buf;
-
-    buf = buffer;                       /* No pointer arithmetic on "void *" */
-    for (totWritten = 0; totWritten < n; ) {
-        numWritten = write(fd, buf, n - totWritten);
-
-        /* The "write() returns 0" case should never happen, but the
-           following ensures that we don't loop forever if it does */
-
-        if (numWritten <= 0) {
-            if (numWritten == -1 && errno == EINTR)
-                continue;               /* Interrupted --> restart write() */
-            else
-                return -1;              /* Some other error */
-        }
-        totWritten += numWritten;
-        buf += numWritten;
-    }
-    return totWritten;                  /* Must be 'n' bytes if we get here */
+	for (ptr = vptr, nleft = n; nleft > 0; nleft -= nwritten, ptr += nwritten){
+		if ((nwritten = write(fd, ptr, nleft)) < 0) {
+			if (errno == EINTR) {
+				nwritten = 0;
+			} else {
+				return -1;
+			}
+		} else if (nwritten == 0) {
+			break;
+		}
+	}
+	return n - nleft;		/* 0 <= result <= n */
 }

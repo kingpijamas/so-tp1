@@ -18,6 +18,9 @@
 *.app
 tp
 
+# Temporary files
+*~
+
 # DB
 so-db
 

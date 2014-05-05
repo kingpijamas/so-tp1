@@ -11,12 +11,11 @@ static void __write_new(Product product);
 static FILE * __open(string name, const string mode);
 static string __get_path_to_tuple(string name);
 
-static boolean init = false;
-static char buf[BUFFER_SIZE];
-
+static boolean __init = false;
+static char __buf[DB_BUFFER_SIZE];
 
 db_ret_code db_init() {
-	if (init) { // maybe print that it was initialized several times, but it's entirely not critical
+	if (__init) { // maybe print that it was __initialized several times, but it's entirely not critical
 		return OK;
 	}
 	// read/write/search permissions for owner and group, and with read/search permissions for others
@@ -24,17 +23,17 @@ db_ret_code db_init() {
 		&& errno != EEXIST) {
 		return CANNOT_CREATE_DATABASE;
 	}
-	if (mkdir(TABLE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1
+	if (mkdir(DB_TABLE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1
 		&& errno != EEXIST) {
 		return CANNOT_CREATE_TABLE;
 	}
-	init = true;
+	__init = true;
 	return OK;
 }
 
 db_ret_code db_save_product(Product product) {
 	int getVal;
-	if (!init) {
+	if (!__init) {
 		return DB_NOT_INITIALIZED;
 	}
 
@@ -53,7 +52,7 @@ db_ret_code db_save_product(Product product) {
 db_ret_code db_get_product_by_name(product_name name, Product * productp) {
 	Product rdProduct;
 
-	if (!init) {
+	if (!__init) {
 		return DB_NOT_INITIALIZED;
 	}
 
@@ -71,8 +70,7 @@ db_ret_code db_get_product_by_name(product_name name, Product * productp) {
 db_ret_code db_update_product(Product product) {
 	int getVal;
 	Product originalProduct;
-
-	if (!init) {
+	if (!__init) {
 		return DB_NOT_INITIALIZED;
 	}
 	getVal = db_get_product_by_name(product.name, &originalProduct);
@@ -91,7 +89,7 @@ db_ret_code db_update_product(Product product) {
 db_ret_code db_delete_product(product_name name) {
 	Product product;
 	int getVal; 
-	if (!init) {
+	if (!__init) {
 		return DB_NOT_INITIALIZED;
 	}
 
@@ -118,6 +116,6 @@ FILE * __open(product_name name, const string mode) {
 }
 
 string __get_path_to_tuple(product_name name) {
-	sprintf(buf, "%s/%s", TABLE_PATH, name); //this should clear the buffer (verify!)
-	return buf;
+	sprintf(__buf, "%s/%s", DB_TABLE_PATH, name); //this should clear the buffer (verify!)
+	return __buf;
 }

@@ -5,10 +5,10 @@
 #include "product.h"
 
 #define DB_ROOT_PATH "so-db"
-#define TABLE_NAME "product"
+#define DB_TABLE_NAME "product"
 
-#define TABLE_PATH	DB_ROOT_PATH"/"TABLE_NAME
-#define BUFFER_SIZE 100
+#define DB_TABLE_PATH DB_ROOT_PATH"/"DB_TABLE_NAME
+#define DB_BUFFER_SIZE 100
 
 typedef enum {
 	DB_NOT_INITIALIZED = OK+1,

@@ -5,55 +5,65 @@
 #include <signal.h>
 #include <unistd.h>
 
+#define SRV_INVALID_ID -1
+
 static void __handle_get_product(int client_id);
 static void __handle_write_product(int client_id);
 static void __handle_remove_product(int client_id);
 static void __handle_invalid_call(int client_id);
-static void __send_err_resp(int client_id, boolean status, int code);
+static void __send_resp(int client_id, boolean status, int code);
 static void __recv(void * buf, int len);
 static void __send(int to_id, void * buf, int len);
-static void __assert(int ret_status);
-static void __stop(int x);
-static void __crash();
+static void __verify_start(int ret_status);
+static void __srv_stop(int x);
+static void __srv_crash();
 
 void srv_start() { //TODO: signal()!
 	int from_id;
 	msg_type type;
 
-	__assert(db_init());
-	__assert(ipc_init(SRV_ID));
+	printf("Server: starting...\n");
+	__verify_start(db_init());
+	__verify_start(ipc_init(SRV_ID));
+	printf("Server: started\n");
 
-	signal(SIGINT, __stop);
+	signal(SIGINT, __srv_stop);
 	while(true) {
-		printf("Srv: Sleeping...\n");
+		ipc_connect(SRV_ID, 0);
+		/*IMPORTANT:
+		Do this, and nothing will work =) (if the srv's asleep, 
+		the scheduler gives priority to the clt and everything fails)
+		
+		printf("Server: Sleeping...\n");
 		usleep(700 * 1000);
-		printf("Srv: ...Woke up\n");
-		printf("Srv: Reading caller_id\n");
+		printf("Server: ...Woke up\n");*/
+		printf("Server: Reading caller_id\n");
 		__recv(&from_id, sizeof(int));
-		printf("Srv:\t< id = %d ...\n", from_id);
-		printf("Srv: Reading msg_type\n");
+		printf("Server:\t< id = %d ...\n", from_id);
+		printf("Server: Reading msg_type\n");
 		__recv(&type, sizeof(msg_type));
-		printf("Srv:\t... type = %d ", type);
+		printf("Server:\t... type = %d ", type);
 		switch(type) {
 			case GET_PRODUCT:
 				printf("(GET_PRODUCT) ...\n");
 				__handle_get_product(from_id);
-				printf("Srv:\t... >\n");
+				printf("Server:\t... >\n");
 				break;
 			case WRITE_PRODUCT:
 				printf("(WRITE_PRODUCT) ...\n");
 				__handle_write_product(from_id);
-				printf("Srv:\t... >\n");
+				printf("Server:\t... >\n");
 				break;
 			case REMOVE_PRODUCT:
 				printf("(REMOVE_PRODUCT) ...\n");
 				__handle_remove_product(from_id);
-				printf("Srv:\t... >\n");
+				printf("Server:\t... >\n");
 				break;
 			default:
 				__handle_invalid_call(from_id);
 				break;
 		}
+		ipc_disconnect(SRV_ID, SRV_INVALID_ID);
 	}
 }
 
@@ -61,10 +71,11 @@ srv_ret_code srv_get_product(product_name name, Product * productp) {
 	return db_get_product_by_name(name, productp);
 }
 
-srv_ret_code srv_write_product(Product product) {
+srv_ret_code srv_write_product(Product * productp) {
 	int ret;
-	if ((ret = db_update_product(product)) == NO_PRODUCT_FOR_NAME) {
-		ret = db_save_product(product);
+	printf("%s %d\n", productp->name, productp->quantity);
+	if ((ret = db_update_product(*productp)) == NO_PRODUCT_FOR_NAME) {
+		ret = db_save_product(*productp);
 	}
 	return ret;
 }
@@ -80,7 +91,7 @@ void __handle_get_product(int client_id) {
 	Product product;
 	char resp[max(sizeof(product_resp),sizeof(error_resp))]; //maybe buffer could be used here
 
-	printf("Srv: Reading message body\n");
+	printf("Server: Reading message body\n");
 	__recv(&msg, sizeof(product_name));
 
 	if ((ret = msg_deserialize_product_name(msg, name)) == OK 
@@ -89,7 +100,7 @@ void __handle_get_product(int client_id) {
 		__send(client_id, resp, sizeof(product_resp));
 		return;
 	}
-	__send_err_resp(client_id, ERR_RESP, ret);
+	__send_resp(client_id, ERR_RESP, ret);
 }
 
 void __handle_remove_product(int client_id) {
@@ -98,14 +109,14 @@ void __handle_remove_product(int client_id) {
 	product_name name;
 	msg_type status = ERR_RESP;
 
-	printf("Srv: Reading message body\n");
+	printf("Server: Reading message body\n");
 	__recv(&msg, sizeof(product_name));
 
 	if ((ret = msg_deserialize_product_name(msg, name)) == OK 
 		&& (ret = srv_remove_product(name)) == OK) {
 		status = OK_RESP;
 	}
-	__send_err_resp(client_id, status, ret);
+	__send_resp(client_id, status, ret);
 }
 
 
@@ -115,24 +126,24 @@ void __handle_write_product(int client_id) {
 	Product product;
 	msg_type status=ERR_RESP;
 
-	printf("Srv: Reading message body\n");
+	printf("Server: Reading message body\n");
 	__recv(&msg, sizeof(Product));
 
-	if ((ret = msg_deserialize_product(msg, &product)) == OK 
-		&& (ret = srv_write_product(product)) == OK) {
-		status = OK_RESP;
+	if ((ret = msg_deserialize_product(msg, &product)) == OK
+		&& (ret = srv_write_product(&product)) == OK) {
+			status = OK_RESP;
 	}
-	__send_err_resp(client_id, status, ret);
-}
-
-void __send_err_resp(int client_id, boolean status, int code) {
-	char resp[sizeof(error_resp)]; //maybe buffer could be used here
-	msg_serialize_error_resp(status, code, resp);
-	__send(client_id, resp, sizeof(error_resp));
+	__send_resp(client_id, status, ret);
 }
 
 void __handle_invalid_call(int client_id) {
- 	__send_err_resp(client_id, ERR_RESP, INVALID_MSG);
+ 	__send_resp(client_id, ERR_RESP, INVALID_MSG);
+}
+
+void __send_resp(int client_id, boolean status, int code) {
+	char resp[sizeof(error_resp)]; //maybe buffer could be used here
+	msg_serialize_error_resp(status, code, resp);
+	__send(client_id, resp, sizeof(error_resp));
 }
 
 void __recv(void * buf, int len) {
@@ -143,21 +154,22 @@ void __send(int to_id, void * buf, int len) {
 	ipc_send(SRV_ID, to_id, buf, len);	
 }
 
-void __assert(int ret_status) { //TODO: check
+void __verify_start(int ret_status) { //TODO: check
 	if (ret_status != OK) {
-		printf("Srv: Could not start (%d)\n", ret_status);
-		__crash();
+		printf("Server: Could not start (%d)\n", ret_status);
+		__srv_crash();
 	}
 }
 
-void __stop(int x) {
-	printf("Srv: Stopping... (%d)\n", x);
+void __srv_stop(int x) {
+	printf("Server: Stopping... (%d)\n", x);
+	ipc_disconnect(SRV_ID, SRV_INVALID_ID);
 	ipc_close(SRV_ID);
-	printf("Srv: stopped\n");
+	printf("Server: stopped\n");
 	exit(0);
 }
 
-void __crash() {
+void __srv_crash() {
 	ipc_close(SRV_ID);
 	exit(1);
 }

@@ -3,6 +3,11 @@
 
 #include "common.h"
 #include "product.h"
+#include "communicator.h"
+#include "productDB.h"
+
+// displays available data for product of name == prodname
+// db_ret_code show_product(product_name name);
 
 typedef enum {
 	PRODUCT_ALREADY_INIT = OK+1,
@@ -11,7 +16,7 @@ typedef enum {
 
 // displays available data for product of name == prodname
 clt_ret_code clt_show_product(product_name name);
-// adds a new product to the stock - this is used as an initialization method
+
 clt_ret_code clt_add_product(product_name name, int quantity);
 // removes a product from the stock altogether - the opposite of clt_add_product
 clt_ret_code clt_remove_product(product_name name);

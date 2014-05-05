@@ -1,150 +1,208 @@
-#include "../../include/productDBX.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <fcntl.h>
+#include "../../include/productDB.h"
 #include <unistd.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <stdio.h> // for perror and remove
+#include "../../include/error.h"
 
-typedef struct {
-    short l_type;    /* Type of lock: F_RDLCK, F_WRLCK, F_UNLCK */
-    short l_whence;  /* How to interpret l_start: SEEK_SET, SEEK_CUR, SEEK_END */
-    off_t l_start;   /* Starting offset for lock */
-    off_t l_len;     /* Number of bytes to lock */
-    pid_t l_pid;     /* PID of process blocking our lock (F_GETLK only) */
-} flock;
+#define DB_TABLE_LOCK_FILE ".db-lock"
+#define DB_FULL_PATH_TO_LOCK_FILE DB_TABLE_PATH"/"DB_TABLE_LOCK_FILE
 
-static int __change_lock(flock * fl, int lock_mode);
-static flock __init_flock();
-static int __open_and_lock(string name, flock * fl);
-static void __unlock_and_close(int fd, flock * fl);
+static void __write_new_product(Product product);
+static FILE * __open(string name, const string mode);
+static string __get_path_to_tuple(string name);
+static FILE * __lock_table(short l_type);
+static void __unlock_table(FILE * table_lock_file);
+static int __lock_file(FILE * file, short l_type);
+static db_ret_code __save_product(Product product);
+static db_ret_code __get_product_by_name(product_name name, Product * productp);
+static db_ret_code __update_product(Product product);
+static db_ret_code __delete_product(product_name name);
 
-//REVISAR... VALE LA PENA LOCKEAR? ALGUIN PUEDE ENTRAR?
-//DEBERIA ESTAR EN EL MEDIO DE __WRITE_NEW
-db_ret_code dbx_save_product(Product product){
- 	int dbRet;
-	int fd;
-	flock fl=__init_flock();
+#define __verify_init()	verify(__init, "DB: Not initialized")
+#define __unlock_file(file) __lock_file(file, F_UNLCK)
+
+
+static boolean __init = false;
+static char __buf[DB_BUFFER_SIZE];
+
+db_ret_code db_init() {
+	if (__init) { // maybe print that it was __initialized several times, but it's entirely not critical
+		return OK;
+	}
+	// read/write/search permissions for owner and group, and with read/search permissions for others
+	if (mkdir(DB_ROOT_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1
+		&& errno != EEXIST) {
+		return CANNOT_CREATE_DATABASE;
+	}
+	if (mkdir(DB_TABLE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1
+		&& errno != EEXIST) {
+		return CANNOT_CREATE_TABLE;
+	}
+	fclose(fopen(DB_FULL_PATH_TO_LOCK_FILE, "w"));
+	__init = true;
+	return OK;
+}
+
+db_ret_code db_get_product_by_name(product_name name, Product * productp) {
+	FILE * table_lock_file;
+	int ret;
+
+	__verify_init();
+
+	table_lock_file = __lock_table(F_RDLCK);
+	ret = __get_product_by_name(name, productp);
+	__unlock_table(table_lock_file);
 	
-	fl.l_pid=getpid();
-	__change_lock(&fl,WRITE_MODE);
-
-	dbRet=db_save_product(product);
-
-	fd=__open_and_lock(product.name, &fl);
-
-	__unlock_and_close(fd, &fl);
-
-	return dbRet;
+	return ret;
 }
 
-db_ret_code dbx_get_product_by_name(string name, Product * product){
-	int dbRet;
-	int fd;
-	Product dbxprod;
-	flock fl=__init_flock();
+db_ret_code db_save_product(Product product) {
+	FILE * table_lock_file;
+	int ret;
 
-	fl.l_pid=getpid();
+	__verify_init();
 
-	fd=__open_and_lock(name, &fl);
-
-	//Asks the DB
-	dbRet=db_get_product_by_name("pen",&dbxprod);
-
-	*product = dbxprod;
-
-	__unlock_and_close(fd, &fl);
-
-	return dbRet;
+	table_lock_file = __lock_table(F_WRLCK);
+	ret = __save_product(product);
+	__unlock_table(table_lock_file);
+	
+	return ret;
 }
 
-db_ret_code dbx_update_product(Product product){
- 	int dbRet;
-	int fd;
-	flock fl=__init_flock();
+db_ret_code db_update_product(Product product) {
+	FILE * table_lock_file;
+	int ret;
 
-	fl.l_pid=getpid();
-	__change_lock(&fl,WRITE_MODE);
+	__verify_init();
 
-	fd=__open_and_lock(product.name, &fl);
+	table_lock_file = __lock_table(F_WRLCK);
+	ret = __update_product(product);
+	__unlock_table(table_lock_file);
 
-	dbRet=db_update_product(product);
-
-	__unlock_and_close(fd, &fl);
-
-	return dbRet;
+	return ret;
 }
 
-db_ret_code dbx_delete_product(string name){
- 	int dbRet;
-	int fd;
-	flock fl=__init_flock();
+db_ret_code db_delete_product(product_name name) {
+	FILE * table_lock_file;
+	int ret;
 
-	fl.l_pid=getpid();
-	__change_lock(&fl,WRITE_MODE);
+	__verify_init();
 
-	fd=__open_and_lock(name, &fl);
-
-	dbRet=db_delete_product(name);
-
-	__unlock_and_close(fd, &fl);
-
-	return dbRet;
+	table_lock_file = __lock_table(F_WRLCK);
+	ret = __delete_product(name);
+	__unlock_table(table_lock_file);
+	return ret;
 }
 
-// move to locks.c
-int __change_lock(flock * fl, int lock_mode){
-	switch(lock_mode){
-	case READ_MODE:
-		fl->l_type=F_RDLCK;
-		return OK;
-	case WRITE_MODE:
-		fl->l_type=F_WRLCK;
-		return OK;
-	default:
-		return ERROR;
+db_ret_code __save_product(Product product) {
+	int getVal = __get_product_by_name(product.name, &product);
+	switch (getVal) {
+		case OK:
+			return PRODUCT_EXISTS;
+		case NO_PRODUCT_FOR_NAME:
+			__write_new_product(product);
+			return OK;
+		default:
+			return getVal;
 	}
 }
 
-//move to lock.c
-flock __init_flock(){
-	/* flock = {l_type l_whence, l_start, l_len, l_pid} */
-	flock fl={F_RDLCK,SEEK_SET,0,0,0};
-	return fl;
+db_ret_code __get_product_by_name(product_name name, Product * productp) {
+	Product rdProduct;
+
+	if (!__init) {
+		return DB_NOT_INITIALIZED;
+	}
+
+	FILE * file = __open(name, "r");
+	if (file == NULL) {
+		return NO_PRODUCT_FOR_NAME;
+	}
+	product_set_name(&rdProduct, name);
+	while(fscanf(file,"%d\n", &((rdProduct).quantity)) != EOF) {;}
+	fclose(file);
+	*productp = rdProduct;
+	return OK;
 }
 
-int __open_and_lock(string name, flock * fl){
+db_ret_code __update_product(Product product) {
+	int getVal;
+	Product originalProduct;
+	if (!__init) {
+		return DB_NOT_INITIALIZED;
+	}
+	getVal = __get_product_by_name(product.name, &originalProduct);
+	switch (getVal) {
+		case NO_PRODUCT_FOR_NAME:
+			return NO_PRODUCT_FOR_NAME;
+		case OK:
+			product_set_quantity(&product, product.quantity+originalProduct.quantity);
+			__write_new_product(product);
+			return OK;
+		default:
+			return UNEXPECTED_UPDATE_ERROR;
+	}
+}
+
+db_ret_code __delete_product(product_name name) {
+	Product product;
+	int getVal; 
+	if (!__init) {
+		return DB_NOT_INITIALIZED;
+	}
+
+	getVal = __get_product_by_name(name, &product);
+	switch (getVal) {
+		case OK:
+			if (remove(__get_path_to_tuple(name)) != 0){
+				return UNEXPECTED_DELETE_ERROR;
+			}
+			return OK;
+		default:
+			return getVal; // this should probably be UNEXPECTED_DELETE_ERROR
+	}
+}
+
+void __write_new_product(Product product) {
+	FILE * file = __open(product.name, "w");
+	fprintf(file, "%d\n", product.quantity);
+	fclose(file);
+}
+
+FILE * __open(product_name name, const string mode) {
+	return fopen(__get_path_to_tuple(name), mode);
+}
+
+string __get_path_to_tuple(product_name name) {
+	sprintf(__buf, "%s/%s", DB_TABLE_PATH, name); //this should clear the buffer (verify!)
+	return __buf;
+}
+
+FILE * __lock_table(short l_type) {
+	FILE * table_lock_file = fopen(DB_FULL_PATH_TO_LOCK_FILE, (l_type == F_WRLCK)? "w":"r");
+	__lock_file(table_lock_file, l_type);
+	return table_lock_file;
+}
+
+void __unlock_table(FILE * table_lock_file) {
+	__unlock_file(table_lock_file);
+	fclose(table_lock_file);
+}
+
+int __lock_file(FILE * file, short l_type) {
 	int fd;
-	char fname[32];
-	sprintf(fname, "%s/%s", TABLE_PATH, name);
-	printf("%s\n",fname);
+	struct flock args;
+	args.l_type = l_type;
+	args.l_whence = SEEK_SET; // from the beginning of the file
+	args.l_start = 0; // offset
+	args.l_len = 0; // the whole file, no matter how much it may grow
+	args.l_pid = 0; // the pid is unset (it's a F_SETLKW)
 
-	//Open and get fd
-	if((fd=open(fname, O_RDWR)) == -1){
-		perror("open");
-		exit(1);
-	}
-
-	printf("Press a key to try to get lock: ");
-    getchar();
-    printf("Trying to get lock...");
-
-    //Getting lock. If there is another lock, it will stay here till it's free
-	if(fcntl(fd,F_SETLKW,fl)==-1){ 
-		perror("fcntrl");
-		exit(1);
-	}
-
-	printf("got lock\n");
-    printf("Press a key to release lock: ");
-    getchar();
-    return fd;
-}
-
-void __unlock_and_close(int fd, flock * fl){
-	fl->l_type=F_UNLCK; /*set to unlock same region */
-	if (fcntl(fd,F_SETLKW, fl)==-1){ //release the lock
-		perror("fcntrl");
-		exit(1);
-	}
-	close(fd);
+	verify((fd = fileno(file)) != -1, "DB: Lock error");
+	verify(fcntl(fd, F_SETLKW, &args) != -1, "DB: Lock error");
+	return OK;
 }
