@@ -10,7 +10,7 @@
 #include "../../include/communicator.h"
 #include "../../include/semaphore.h"
 
-#define SRV_ID 0
+
 #define CLT_ID 1
 #define INVALID -1
 

@@ -13,7 +13,7 @@
 
 #define INVALID -1
 
-#define SRV_ID 0
+
 #define LOCALHOST "127.0.0.1"
 #define SRV_ADDRESS LOCALHOST
 #define SRV_PORT "1337"

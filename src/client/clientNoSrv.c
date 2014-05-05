@@ -18,7 +18,7 @@ clt_ret_code clt_add_product(product_name name, int quantity){
 	Product aux, product = product_new(name, quantity);
 	int ret;
 
-	printf("Adding product... { name=%s, quantity=%d}\n", name, quantity);
+	printf("Adding product... { name=%s, quantity=%d }\n", name, quantity);
 
 	if (db_get_product_by_name(name, &aux) == OK) {
 		ret = PRODUCT_ALREADY_INIT;
@@ -40,7 +40,7 @@ clt_ret_code clt_remove_product(product_name name){
 // adds 'quantity' products with name == prodname
 clt_ret_code clt_deposit_product(product_name name, int quantity){
 	Product product = product_new(name, quantity);
-	printf("Depositing product... { name=%s, quantity=%d}\n", name, quantity);
+	printf("Depositing product... { name=%s, quantity=%d }\n", name, quantity);
 
 	if (quantity < 0) {
 		return NEGATIVE_QUANTITY;
@@ -52,7 +52,7 @@ clt_ret_code clt_deposit_product(product_name name, int quantity){
 clt_ret_code clt_take_product(product_name name, int quantity){
 	Product product = product_new(name, -quantity);
 
-	printf("Taking product... { name=%s, quantity=%d}\n", name, quantity);
+	printf("Taking product... { name=%s, quantity=%d }\n", name, quantity);
 
 	if (quantity < 0) {
 		return NEGATIVE_QUANTITY;

@@ -5,6 +5,7 @@ MAIN = main
 MODEL = $(SRC)/model
 DBS = $(SRC)/db
 CLIENTS = $(SRC)/client
+SERVER = $(SRC)/server
 IPCS = $(SRC)/ipcs
 SEMS = $(IPCS)/semaphores
 UTILS = $(SRC)/utils

@@ -11,7 +11,7 @@
 
 #define SHM_SIZE 100
 
-#define SRV_ID 0
+
 
 #define SHM_SEM_NUM 4
 
