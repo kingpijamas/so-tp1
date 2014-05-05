@@ -50,10 +50,9 @@ int main(int argc, char **argv) {
 				&& __get_product("rubber", true)
 				&& __write_product("rubber", 1, false);
 			printf("\n\nAll tests done: %s\n", !passed? "[FAILED]":"[OK]");
-			ipc_close(CLT_ID);
+			//ipc_close(CLT_ID);
 			break;
 		default: /* parent (server) */
-			signal(SIGPIPE, bye);
 			srv_start();
 			break;
 	}

@@ -130,28 +130,30 @@ int __handle_not_ok_resp(msg_type resp_type) {
 	msg_deserialize_code(resp_body, &code);
 	__disconnect();
 	switch(resp_type) {
-		case ERR_RESP:
-			//TODO: check!
-			return code;
-		default: //Should never happen
-			printf("Clt: critical error. Cannot recover.\n");
-			exit(1);
-			return false;
+	case ERR_RESP:
+		//TODO: check!
+		return code;
+	default: //Should never happen
+		printf("Clt: critical error. Cannot recover.\n");
+		exit(1);
+		return false;
 	}
 }
 
 void __connect() {
 	if (ipc_connect(__get_id(), SRV_ID) == OK) {
 		printf("Clt: connected to srv\n");
+	} else {
+		printf("Clt: could not connect to srv [ERROR]\n");
 	}
-	printf("Clt: could not connect to srv [ERROR]\n");
 }
 
 void __disconnect() {
 	if (ipc_disconnect(__get_id(), SRV_ID) == OK) {
 		printf("Clt: diconnected from srv\n");
+	} else {
+		printf("Clt: could not disconnect from srv [ERROR]\n");
 	}
-	printf("Clt: could not diconnect from srv [ERROR]\n");
 }
 
 void __send(void * buf, int len) {
