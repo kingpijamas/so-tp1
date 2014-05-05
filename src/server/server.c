@@ -25,11 +25,11 @@ void srv_start() { //TODO: signal()!
 	printf("Server: starting...\n");
 	__verify_start(db_init());
 	__verify_start(ipc_init(SRV_ID));
-	__verify_start(ipc_connect(SRV_ID, 0));
 	printf("Server: started\n");
 
 	signal(SIGINT, __srv_stop);
 	while(true) {
+		ipc_connect(SRV_ID, 0);
 		/*IMPORTANT:
 		Do this, and nothing will work =) (if the srv's asleep, 
 		the scheduler gives priority to the clt and everything fails)

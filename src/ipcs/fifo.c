@@ -35,26 +35,14 @@ int ipc_init(int from_id) {
 }
 
 int ipc_connect(int from_id, int to_id) {
-	struct stat fifo_stat;
-	int errnost;
-
-	printf("%s: Connecting...\n", from_id==SRV_ID? "Srv":"Clt");
 	switch(from_id) {
 	case SRV_ID:
-		while(stat(FIFO_SRV_CLT_FULL_NAME, &fifo_stat) == -1) {
-			errnost = errno;
-			verify(errnost == EBADF || errnost == ENOENT, "IPC: Error connecting (SRV)");
-			usleep(100);
-		}
+		printf("\n[FIFO] %s: Connecting..."FIFO_CLT_SRV_FULL_NAME"\n", from_id==SRV_ID? "Srv":"Clt");
+		__verify(__mk_fifo(FIFO_CLT_SRV_FULL_NAME), "IPC: Error connecting (SRV)");
 		return OK;
 	default:
-		while(stat(FIFO_SRV_CLT_FULL_NAME, &fifo_stat) == 0) {
-			usleep(100);
-		}
-		errnost = errno;
-		verify(errnost == EBADF || errnost == ENOENT, "IPC: Error connecting (CLT)");
+		printf("\n[FIFO] %s: Connecting..."FIFO_SRV_CLT_FULL_NAME"\n", from_id==SRV_ID? "Srv":"Clt");
 		__verify(__mk_fifo(FIFO_SRV_CLT_FULL_NAME), "IPC: Error connecting (CLT)");
-		__verify(__mk_fifo(FIFO_CLT_SRV_FULL_NAME), "IPC: Error connecting (CLT)");
 		return OK;
 	}
 }
@@ -76,11 +64,13 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 
 int ipc_recv(int from_id, void * buf, int len) {
 	int fifo_fd, read, resp;
+	string err_text = from_id==SRV_ID? "Srv: Recv error":"Clt: Recv error";
 	printf("(Try) %s: Reading %d bytes from %s\n", from_id==SRV_ID? "Srv":"Clt", len, __get_fifo_name(from_id));
+
 
 	fifo_fd = __get_fifo(from_id, O_RDONLY);
 	for (read = 0; read < len; read += resp) {
-		__verify(resp = freadn(fifo_fd, buf+read, len-read), "IPC: Recv error");
+		__verify(resp = freadn(fifo_fd, buf+read, len-read), err_text);
 		if (resp == 0) {
 			return read;
 		}
@@ -90,12 +80,13 @@ int ipc_recv(int from_id, void * buf, int len) {
 }
 
 int ipc_disconnect(int from_id, int to_id) {
-	printf("%s: Disconnecting...\n", from_id==SRV_ID? "Srv":"Clt");
 	switch (from_id) {
 	case SRV_ID:
+		printf("\n[FIFO] %s: Disconnecting..."FIFO_CLT_SRV_FULL_NAME"\n", from_id==SRV_ID? "Srv":"Clt");
+		unlink(FIFO_CLT_SRV_FULL_NAME);
 		return OK;
 	default:
-		unlink(FIFO_CLT_SRV_FULL_NAME);
+		printf("\n[FIFO] %s: Disconnecting..."FIFO_SRV_CLT_FULL_NAME"\n", from_id==SRV_ID? "Srv":"Clt");
 		unlink(FIFO_SRV_CLT_FULL_NAME);
 		return OK;
 	}
