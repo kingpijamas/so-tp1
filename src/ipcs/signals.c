@@ -45,7 +45,6 @@ int ipc_connect(int from_id, int to_id){
 	FILE * file=__open(ipcname,"r");
 	if(file==NULL){
 		ret=__write_new(ipcname);
-		printf("Iniciado %s\n",ipcname);
 		return ret;
 	}
 	fclose(file);
@@ -66,7 +65,6 @@ int ipc_disconnect(int from_id, int to_id){
 int ipc_send(int from_id, int to_id, void * buf, int len){
 	char ipcname[20];
 	sprintf(ipcname, "%d", to_id);
-	// printf("%s\n","Before open");
 	FILE * file=__open(ipcname, "r+w");
 	if(file==NULL){
 		printf("After open, file null. ipcname:%s\n to_id:%d",ipcname,to_id);
@@ -85,8 +83,6 @@ int ipc_send(int from_id, int to_id, void * buf, int len){
 //lee el archivo de from_id
 int ipc_rcv(int from_id, void * buf, int len){
 	char ipcname[20];
-	printf("Exit flag %d\n",exit_flag);
-	// signal(SIGUSR1,__handler);
 	struct sigaction act; 
 	memset (&act, '\0', sizeof(act));
 	act.sa_handler = &__handler;
@@ -97,17 +93,12 @@ int ipc_rcv(int from_id, void * buf, int len){
 	while(!exit_flag){
 		;
 	}
-	printf("%s\n","After signal" );
 	sprintf(ipcname, "%d", from_id);
 	FILE * file=__open(ipcname, "r+");
-	printf("ipc name %s\n",ipcname);
-	// printf("%s\n","1");
 	if(file==NULL){
-		printf("%s\n","Null"); //QUE CARAJO DE DONDE SALIS 
+		printf("%s\n","Null"); 
 		return ERROR;
 	}
-	// printf("%s\n","2");
-	// printf("%s\n","3");
 	freadn(fileno(file),buf,len);
 	exit_flag=0;
 	return OK;
@@ -119,7 +110,6 @@ int __write_new(char * id) {
 		printf("%s\n","__write_new file null");
 		return ERROR;
 	}
-	printf("FD %d\n",fileno(file));
 	close(fileno(file));
 	return OK;
 }
@@ -130,11 +120,9 @@ FILE * __open(char * name, const string mode) {
 
 string __get_path(char * id) {
 	sprintf(buf, "%s/%s", SIGNALFILES_IPC_DIR, id); 
-	printf("BUF %s\n",buf);
 	return buf;
 }
 
 void __handler(int n) {
 	exit_flag=1; 
-	printf("%s\n","I'm a handler");	;
 }

@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 				fclose(file2);
 
 				printf("\nEntro hijo\n");
-				printf("Client id %d, Srv id %d\n",clientid,srvid);
+				// printf("Client id %d, Srv id %d\n",clientid,srvid);
 				ipc_connect(clientid, srvid);
 				printf("\nChild: about to send (\"%s\")\n", messages[i]);
 				ipc_send(clientid, srvid, messages[i], strlen(messages[i]));
@@ -97,15 +97,11 @@ int main(int argc, char **argv) {
 			if(file==NULL){
 				printf("%s\n","Error opening server id file");
 			}
-			printf("%d\n",srvid);
-			printf("%d\n",fileno(file));
 			fprintf(file, "%d\n", srvid);
 			fclose(file);
 			//
 			ipc_init(srvid);
 			printf("\nEntro padre\n");
-			printf("CLIENT ID %d\n",clientid);
-			printf("SRV %d\n",srvid);
 			while ( messages[i]!=NULL ) {
 				printf("Parent: about to read\n");
 				ipc_rcv(srvid, buf, strlen(messages[i]));
@@ -115,13 +111,10 @@ int main(int argc, char **argv) {
 					printf("%s\n","Error opening client id file2 in parent");
 				}
 				while(fscanf(file2,"%d\n", &clientid) != EOF) {;}
-				printf("%d\n",clientid);
 				//
-				printf("CLIENT ID %d\n",clientid);
 				printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", (int)strlen(messages[i]), buf, messages[i]);
 				if (strneq(messages[i], buf, strlen(messages[i]))) {
 					printf("Parent: [OK]\n");
-					printf("CLIENT ID %d\n",clientid);
 					ipc_send(srvid, clientid, OK_MSG, SRV_RESP_LEN);
 				} else {
 					printf("Parent: [ERROR]\n");
@@ -130,8 +123,6 @@ int main(int argc, char **argv) {
 				}
 				i++;
 			}
-			// // usleep(1000);
-			// //semaphore_stop(SYNC_SEM);
 			ipc_close(srvid);
 			printf("Parent: out\n");
 			break;
