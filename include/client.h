@@ -7,7 +7,7 @@
 #include "productDB.h"
 
 // displays available data for product of name == prodname
-db_ret_code show_product(product_name name);
+// db_ret_code show_product(product_name name);
 
 typedef enum {
 	PRODUCT_ALREADY_INIT = OK+1,

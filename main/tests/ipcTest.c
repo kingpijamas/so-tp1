@@ -10,7 +10,6 @@
 #include "../../include/communicator.h"
 #include "../../include/semaphore.h"
 
-#define SRV_ID 0
 #define CLT_ID 1
 #define INVALID -1
 
@@ -28,10 +27,7 @@ int main(int argc, char **argv) {
 	char buf[200];
 	boolean failed = false;
 	string messages[] = {"hello", "world!", NULL};
-	ipc_close(CLT_ID);
-	ipc_close(SRV_ID);
-	//semaphore_init(SYNC_SEM, true);
-
+	
 	switch (fork()) {
 		case -1:
 			__fatal("Fork error");
@@ -40,20 +36,20 @@ int main(int argc, char **argv) {
 			usleep(1000);
 			//printf("\nHijo:\n");
 			//semaphore_stop(SYNC_SEM);
+			//printf("\nEntro hijo\n");
 			while ( messages[i]!=NULL && !failed ) {
-				printf("\nEntro hijo\n");
 				ipc_connect(CLT_ID, SRV_ID);
-				printf("\nChild: about to send (\"%s\")\n", messages[i]);
+				//printf("\nChild: about to send (\"%s\")\n", messages[i]);
 				ipc_send(CLT_ID, 0, messages[i], strlen(messages[i]));
-				printf("Child: msg sent\n");
-				ipc_rcv(CLT_ID, buf, SRV_RESP_LEN);
-				printf("Child: response received (%.*s)\n", SRV_RESP_LEN, buf);
+				//printf("Child: msg sent\n");
+				ipc_recv(CLT_ID, buf, SRV_RESP_LEN);
+				//printf("Child: response received (%.*s)\n", SRV_RESP_LEN, buf);
 				failed = !strneq(OK_MSG, buf, SRV_RESP_LEN);
 				if (failed) {
 					printf("Child: Error\n");
-				  } else {
-				  	printf("Child: ok response received\n");
-				  }
+				} else {
+					printf("Child: ok response received\n");
+				}
 				ipc_disconnect(CLT_ID, SRV_ID);
 				i++;
 			}
@@ -62,17 +58,17 @@ int main(int argc, char **argv) {
 			printf("Child: out %s\n",failed? "[ERROR]":"[OK]");
 			break;
 		default: /* parent */
-			printf("\nPadre:\n");
-			// signal(SIGPIPE, __bye);
+			//printf("\nPadre:\n");
+			signal(SIGPIPE, __bye);
 			ipc_init(SRV_ID);
-			ipc_connect(SRV_ID, INVALID);
-			// //semaphore_let(SYNC_SEM);
-			printf("\nEntro padre\n");
-
+			
+			//semaphore_let(SYNC_SEM);
+			//printf("\nEntro padre\n");
 			while ( messages[i]!=NULL ) {
-				printf("Parent: about to read\n");
-				ipc_rcv(SRV_ID, buf, strlen(messages[i]));
-				printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", strlen(messages[i]), buf, messages[i]);
+				ipc_connect(SRV_ID, INVALID);
+				//printf("Parent: about to read\n");
+				ipc_recv(SRV_ID, buf, strlen(messages[i]));
+				//printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", strlen(messages[i]), buf, messages[i]);
 				if (strneq(messages[i], buf, strlen(messages[i]))) {
 					printf("Parent: [OK]\n");
 					ipc_send(SRV_ID, CLT_ID, OK_MSG, SRV_RESP_LEN);
@@ -81,10 +77,11 @@ int main(int argc, char **argv) {
 					ipc_send(SRV_ID, CLT_ID, NOT_OK_MSG, SRV_RESP_LEN);
 					//exit(1);
 				}
+				ipc_disconnect(SRV_ID, INVALID);
 				i++;
 			}
-			// // usleep(1000);
-			// //semaphore_stop(SYNC_SEM);
+			usleep(1000);
+			//semaphore_stop(SYNC_SEM);
 			ipc_close(SRV_ID);
 			printf("Parent: out\n");
 			break;

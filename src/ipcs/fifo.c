@@ -1,19 +1,28 @@
+#include "../../include/communicator.h"
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <string.h>
 #include "../../include/utils.h"
 #include "../../include/rdwrn.h"
 #include "../../include/common.h"
+#include "../../include/error.h"
 
-#define FIFO_IPC_NAME(from,to) "("from"->"to")"
+#define FIFO_BUFFER_SIZE 100
+#define FIFO_DIR "/tmp/so-fifo"
 
-#define FIFO_IPC_DIR "/tmp/so-fifo"
-#define FIFO_IPC_SRV_CLT_FULL_NAME FIFO_IPC_DIR"/"FIFO_IPC_NAME("srv","clt")
-#define FIFO_IPC_CLT_SRV_FULL_NAME FIFO_IPC_DIR"/"FIFO_IPC_NAME("clt","srv")
 #define ALL_RW S_IRWXU|S_IRWXG|S_IRWXO
-static fdesc __connect(string ipc_name, int flags);
+#define FIFO_NAME(from,to) "("from"->"to")"
+#define FIFO_SRV_CLT_FULL_NAME FIFO_DIR"/"FIFO_NAME("srv","clt")
+#define FIFO_CLT_SRV_FULL_NAME FIFO_DIR"/"FIFO_NAME("clt","srv")
+
+static fdesc __get_fifo(int receiver_id, int flags);
+static int __mk_fifo(string fifo_name);
+static string __get_fifo_name(int receiver_id);
+static boolean __failed(int res);
+static void __verify(int res, string err_text);
 
 int ipc_connect(int from_id, int to_id){
 	return OK;	
@@ -24,49 +33,104 @@ int ipc_disconnect(int from_id, int to_id){
 }
 
 int ipc_init(int from_id) {
-	//since it's a concurrent server, from_id and to_id are ignored here
-	return mkdir(FIFO_IPC_DIR, ALL_RW);
+	switch(from_id) {
+	case SRV_ID:
+		ipc_disconnect(from_id, -1);
+		return mkdir(FIFO_DIR, ALL_RW);
+	default:
+		return OK;
+	}
+}
+
+int ipc_connect(int from_id, int to_id) {
+	switch(from_id) {
+	case SRV_ID:
+		printf("\n[FIFO] %s: Connecting..."FIFO_CLT_SRV_FULL_NAME"\n", from_id==SRV_ID? "Srv":"Clt");
+		__verify(__mk_fifo(FIFO_CLT_SRV_FULL_NAME), "IPC: Error connecting (SRV)");
+		return OK;
+	default:
+		printf("\n[FIFO] %s: Connecting..."FIFO_SRV_CLT_FULL_NAME"\n", from_id==SRV_ID? "Srv":"Clt");
+		__verify(__mk_fifo(FIFO_SRV_CLT_FULL_NAME), "IPC: Error connecting (CLT)");
+		return OK;
+	}
 }
 
 int ipc_send(int from_id, int to_id, void * buf, int len) {
-	//bloquearse si ya hay un ipc funcionando
-	string ipc_name;
-	switch(from_id) {
-		case 0: //I'm the server
-			ipc_name = FIFO_IPC_SRV_CLT_FULL_NAME;
-			break;
-		default:
-			ipc_name = FIFO_IPC_CLT_SRV_FULL_NAME;
-			break;
+	int fifo_fd, written, resp;
+	printf("(Try) %s: Writing %d bytes to %s\n", from_id==SRV_ID? "Srv":"Clt", len, __get_fifo_name(to_id));
+
+	fifo_fd = __get_fifo(to_id, O_WRONLY);
+	for (written = 0; written < len; written += resp) {
+		__verify(resp = fwriten(fifo_fd, buf+written, len-written), "IPC: Send error");
+		if (resp == 0) {
+			return written;
+		}
 	}
-	//printf("Writing %d bytes to %s from id: %d\n", len, ipc_name, from_id);
-	printf("%s: Writing %d bytes to %s\n", from_id==0? "Srv":"Clt", len, ipc_name);
-	return /*writen(*/write(__connect(ipc_name, O_WRONLY), buf, len);
+	printf("%s: Wrote %d bytes to %s\n", from_id==SRV_ID? "Srv":"Clt", len, __get_fifo_name(to_id));
+	return len;
 }
 
-int ipc_rcv(int from_id, void * buf, int len) {
-	//bloquearse si ya hay un ipc funcionando
-	string ipc_name;
-	switch(from_id) {
-		case 0: //I'm the server
-			ipc_name = FIFO_IPC_CLT_SRV_FULL_NAME;
-			break;
-		default:
-			ipc_name = FIFO_IPC_SRV_CLT_FULL_NAME;
-			break;
+int ipc_recv(int from_id, void * buf, int len) {
+	int fifo_fd, read, resp;
+	string err_text = from_id==SRV_ID? "Srv: Recv error":"Clt: Recv error";
+	printf("(Try) %s: Reading %d bytes from %s\n", from_id==SRV_ID? "Srv":"Clt", len, __get_fifo_name(from_id));
+
+
+	fifo_fd = __get_fifo(from_id, O_RDONLY);
+	for (read = 0; read < len; read += resp) {
+		__verify(resp = freadn(fifo_fd, buf+read, len-read), err_text);
+		if (resp == 0) {
+			return read;
+		}
 	}
-	//printf("Reading %d bytes from %s from id: %d\n", len, ipc_name, from_id);
-	printf("%s: Reading %d bytes from %s\n", from_id==0? "Srv":"Clt", len, ipc_name);
-	return /*readn(*/read(__connect(ipc_name, O_RDONLY), buf, len);
+	printf("%s: Read %d bytes from %s\n", from_id==SRV_ID? "Srv":"Clt", len, __get_fifo_name(from_id));
+	return len;
+}
+
+int ipc_disconnect(int from_id, int to_id) {
+	switch (from_id) {
+	case SRV_ID:
+		printf("\n[FIFO] %s: Disconnecting..."FIFO_CLT_SRV_FULL_NAME"\n", from_id==SRV_ID? "Srv":"Clt");
+		unlink(FIFO_CLT_SRV_FULL_NAME);
+		return OK;
+	default:
+		printf("\n[FIFO] %s: Disconnecting..."FIFO_SRV_CLT_FULL_NAME"\n", from_id==SRV_ID? "Srv":"Clt");
+		unlink(FIFO_SRV_CLT_FULL_NAME);
+		return OK;
+	}
 }
 
 int ipc_close(int from_id) {
-	unlink(FIFO_IPC_CLT_SRV_FULL_NAME);
-	unlink(FIFO_IPC_SRV_CLT_FULL_NAME);
-	return OK;
+	switch(from_id) {
+	case SRV_ID:
+		rmdir(FIFO_DIR);
+		return OK;
+	default:
+		return OK;
+	}
 }
 
-fdesc __connect(string ipc_name, int flags) {
-	mkfifo(ipc_name, ALL_RW | S_IFIFO);
-	return open(ipc_name, flags | S_IFIFO);
+fdesc __get_fifo(int receiver_id, int flags) {
+	return open(__get_fifo_name(receiver_id), flags /*| S_IFIFO*/);
+}
+
+int __mk_fifo(string fifo_name) {
+	return mkfifo(fifo_name, ALL_RW | S_IFIFO);
+}
+
+string __get_fifo_name(int receiver_id) {
+	switch(receiver_id) {
+	case SRV_ID:
+		return FIFO_CLT_SRV_FULL_NAME;
+	default:
+		return FIFO_SRV_CLT_FULL_NAME;
+	}
+}
+
+boolean __failed(int res) {
+	return res == -1;
+}
+
+void __verify(int res, string err_text) {
+	verify(!__failed(res), err_text);
 }

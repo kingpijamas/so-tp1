@@ -3,7 +3,6 @@
 #include "../../include/productDB.h"
 #include "../../include/common.h"
 #include "../../include/product.h"
-#include "../../include/client.h"
 
 int main(void) {
 	int testAns;
@@ -14,6 +13,7 @@ int main(void) {
 	db_save_product(a);
 
 	testAns = db_get_product_by_name("pen", &c);
+
 	if (testAns == OK){
 		printf("Name=%s, quantity=%d (OK)\n", c.name, c.quantity);
 	} else {

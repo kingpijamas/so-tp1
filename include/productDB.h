@@ -5,10 +5,10 @@
 #include "product.h"
 
 #define DB_ROOT_PATH "so-db"
-#define TABLE_NAME "product"
+#define DB_TABLE_NAME "product"
 
-#define TABLE_PATH	DB_ROOT_PATH"/"TABLE_NAME
-#define BUFFER_SIZE 100
+#define DB_TABLE_PATH DB_ROOT_PATH"/"DB_TABLE_NAME
+#define DB_BUFFER_SIZE 100
 
 typedef enum {
 	DB_NOT_INITIALIZED = OK+1,
@@ -19,12 +19,6 @@ typedef enum {
 	UNEXPECTED_DELETE_ERROR,
 	UNEXPECTED_UPDATE_ERROR
 } db_ret_code;
-
-typedef enum {
-	READ_MODE, 
-	WRITE_MODE,
-	UNLOCK
-} lock_mode;
 
 db_ret_code db_init();
 db_ret_code db_save_product(Product product);
