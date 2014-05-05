@@ -10,18 +10,18 @@
 #include "../../include/productDB.h"
 #include "../../include/utils.h"
 #include "../../include/communicator.h"
-#include "../../include/server.h"
 #include "../../include/msg.h"
 #include <sys/types.h>
-#include <unistd.h>
 
 static int __get_product(product_name name, Product * product);
 static int __remove_product(product_name name);
 static int __write_product(product_name name, int quantity);
 static int __handle_not_ok_resp(msg_type resp_type);
 static int __get_id();
+static void __connect();
 static void __send(void * buf, int len);
-static void __rcv(void * buf, int len);
+static void __recv(void * buf, int len);
+static void __disconnect();
 
 // displays available data for product of name == prodname
 clt_ret_code clt_show_product(product_name name){
@@ -68,13 +68,15 @@ int __get_product(product_name name, Product * productp){
 	msg_type resp_type;
 	char resp_body[sizeof(product_resp)];
 	
+	__connect();
 	msg_serialize_product_name_msg(__get_id(), GET_PRODUCT, name, toSend);
 	__send(toSend, sizeof(product_name_msg));
-	__rcv(&resp_type, sizeof(msg_type));
-	
+	__recv(&resp_type, sizeof(msg_type));
+
 	if (resp_type == OK_RESP) {
-		__rcv(resp_body, sizeof(Product));
+		__recv(resp_body, sizeof(Product));
 		msg_deserialize_product(resp_body, productp);
+		__disconnect();
 		return OK;
 	}
 	return __handle_not_ok_resp(resp_type);
@@ -86,13 +88,15 @@ int __remove_product(product_name name){
 	char resp_body[sizeof(error_resp)];
 	int code;
 	
+	__connect();
 	msg_serialize_product_name_msg(__get_id(), REMOVE_PRODUCT, name, toSend);
 	__send(toSend, sizeof(product_name_msg));
-	__rcv(&resp_type, sizeof(msg_type));
-	
+	__recv(&resp_type, sizeof(msg_type));
+
 	if (resp_type == OK_RESP) {
-		__rcv(resp_body, sizeof(int));
+		__recv(resp_body, sizeof(int));
 		msg_deserialize_code(resp_body, &code);
+		__disconnect();
 		return OK;
 	}
 	return __handle_not_ok_resp(resp_type);
@@ -103,13 +107,15 @@ int __write_product(product_name name, int quantity){
 	msg_type resp_type;
 	char resp_body[sizeof(error_resp)];
 	int code;
-	
+
+	__connect();	
 	msg_serialize_product_msg(__get_id(), WRITE_PRODUCT, product_new(name, quantity), toSend);
 	__send(toSend, sizeof(product_msg));
-	__rcv(&resp_type, sizeof(msg_type));
+	__recv(&resp_type, sizeof(msg_type));
 	if (resp_type == OK_RESP) {
-		__rcv(resp_body, sizeof(int));
+		__recv(resp_body, sizeof(int));
 		msg_deserialize_code(resp_body, &code);
+		__disconnect();
 		return OK;
 	}
 	return __handle_not_ok_resp(resp_type);
@@ -118,16 +124,33 @@ int __write_product(product_name name, int quantity){
 int __handle_not_ok_resp(msg_type resp_type) {
 	char resp_body[sizeof(int)];
 	int code;
-	__rcv(resp_body, sizeof(int));
+	__recv(resp_body, sizeof(int));
 	msg_deserialize_code(resp_body, &code);
+	__disconnect();
 	switch(resp_type) {
-		case ERR_RESP:
-			//TODO: check!
-			return code;
-		default: //Should never happen
-			printf("Clt: critical error. Cannot recover.\n");
-			exit(1);
-			return false;
+	case ERR_RESP:
+		//TODO: check!
+		return code;
+	default: //Should never happen
+		printf("Clt: critical error. Cannot recover.\n");
+		exit(1);
+		return false;
+	}
+}
+
+void __connect() {
+	if (ipc_connect(__get_id(), SRV_ID) == OK) {
+		printf("Clt: connected to srv\n");
+	} else {
+		printf("Clt: could not connect to srv [ERROR]\n");
+	}
+}
+
+void __disconnect() {
+	if (ipc_disconnect(__get_id(), SRV_ID) == OK) {
+		printf("Clt: diconnected from srv\n");
+	} else {
+		printf("Clt: could not disconnect from srv [ERROR]\n");
 	}
 }
 
@@ -135,8 +158,8 @@ void __send(void * buf, int len) {
 	printf("Clt: wrote %d bytes of %d\n", ipc_send(__get_id(), SRV_ID, buf, len), len);	
 }
 
-void __rcv(void * buf, int len) {
-	printf("Clt: read %d bytes of %d\n", ipc_rcv(__get_id(), buf, len), len);
+void __recv(void * buf, int len) {
+	printf("Clt: read %d bytes of %d\n", ipc_recv(__get_id(), buf, len), len);
 }
 
 int __get_id() { //TODO: Check!

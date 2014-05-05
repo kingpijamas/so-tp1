@@ -9,12 +9,6 @@
 #include "../../include/utils.h"
 #include "../../include/communicator.h"
 #include "../../include/semaphore.h"
-// #include <fcntl.h>           /* For O_* constants */
-// #include <sys/stat.h>        /* For mode constants */
-// #include <mqueue.h>
-
-// #define SRV_ID 0
-// #define CLT_ID 1
 #define INVALID -1
 
 #define OK_MSG "OK"
