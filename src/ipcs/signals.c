@@ -19,6 +19,7 @@ static int __write_new(char * id) ;
 static FILE * __open(char * name, const string mode);
 int ipc_connect(int from_id, int to_id);
 int exit_flag;
+int server_busy;
 
 
 //inicia el file del server
@@ -41,8 +42,13 @@ int ipc_close(int from_id){
 int ipc_connect(int from_id, int to_id){
 	char ipcname[20];
 	int ret;
+	//Se podría hacer atomómico con un semáforo.
+	while(server_busy){
+		;
+	}
 	sprintf(ipcname, "%d", from_id);
 	FILE * file=__open(ipcname,"r");
+	server_busy=1;
 	if(file==NULL){
 		ret=__write_new(ipcname);
 		return ret;
@@ -58,6 +64,7 @@ int ipc_disconnect(int from_id, int to_id){
 	if (remove(__get_path(ipcname)) != 0){
 		return UNEXPECTED_DELETE_ERROR;
 	}
+	server_busy=0;
 	return OK;
 }
 
