@@ -10,10 +10,10 @@
 #include "../../include/productDB.h"
 #include "../../include/utils.h"
 #include "../../include/communicator.h"
-#include "../../include/server.h"
 #include "../../include/msg.h"
 #include <sys/types.h>
-#include <unistd.h>
+
+#define SRV_ID 0
 
 static int __get_product(product_name name, Product * product);
 static int __remove_product(product_name name);

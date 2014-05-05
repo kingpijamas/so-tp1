@@ -9,11 +9,11 @@ int main(void) {
 	Product a = product_new("pen", 100), b = product_new("stapler", 500), c;
 
 	db_init();
-	printf("A\n");
 	db_save_product(b);
 	db_save_product(a);
 
 	testAns = db_get_product_by_name("pen", &c);
+
 	if (testAns == OK){
 		printf("Name=%s, quantity=%d (OK)\n", c.name, c.quantity);
 	} else {
