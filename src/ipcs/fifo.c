@@ -24,14 +24,6 @@ static string __get_fifo_name(int receiver_id);
 static boolean __failed(int res);
 static void __verify(int res, string err_text);
 
-int ipc_connect(int from_id, int to_id){
-	return OK;	
-}
-
-int ipc_disconnect(int from_id, int to_id){
-	return OK;
-}
-
 int ipc_init(int from_id) {
 	switch(from_id) {
 	case SRV_ID:

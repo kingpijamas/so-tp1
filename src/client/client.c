@@ -76,7 +76,7 @@ int __get_product(product_name name, Product * productp){
 	__recv(&resp_type, sizeof(msg_type));
 
 	if (resp_type == OK_RESP) {
-		__rcv(resp_body, sizeof(Product));
+		__recv(resp_body, sizeof(Product));
 		msg_deserialize_product(resp_body, productp);
 		__disconnect();
 		return OK;
@@ -96,7 +96,7 @@ int __remove_product(product_name name){
 	__recv(&resp_type, sizeof(msg_type));
 
 	if (resp_type == OK_RESP) {
-		__rcv(resp_body, sizeof(int));
+		__recv(resp_body, sizeof(int));
 		msg_deserialize_code(resp_body, &code);
 		__disconnect();
 		return OK;
@@ -113,9 +113,9 @@ int __write_product(product_name name, int quantity){
 	__connect();	
 	msg_serialize_product_msg(__get_id(), WRITE_PRODUCT, product_new(name, quantity), toSend);
 	__send(toSend, sizeof(product_msg));
-	__rcv(&resp_type, sizeof(msg_type));
+	__recv(&resp_type, sizeof(msg_type));
 	if (resp_type == OK_RESP) {
-		__rcv(resp_body, sizeof(int));
+		__recv(resp_body, sizeof(int));
 		msg_deserialize_code(resp_body, &code);
 		__disconnect();
 		return OK;
@@ -126,7 +126,7 @@ int __write_product(product_name name, int quantity){
 int __handle_not_ok_resp(msg_type resp_type) {
 	char resp_body[sizeof(int)];
 	int code;
-	__rcv(resp_body, sizeof(int));
+	__recv(resp_body, sizeof(int));
 	msg_deserialize_code(resp_body, &code);
 	__disconnect();
 	switch(resp_type) {
@@ -160,8 +160,8 @@ void __send(void * buf, int len) {
 	printf("Clt: wrote %d bytes of %d\n", ipc_send(__get_id(), SRV_ID, buf, len), len);	
 }
 
-void __rcv(void * buf, int len) {
-	printf("Clt: read %d bytes of %d\n", ipc_rcv(__get_id(), buf, len), len);
+void __recv(void * buf, int len) {
+	printf("Clt: read %d bytes of %d\n", ipc_recv(__get_id(), buf, len), len);
 }
 
 int __get_id() { //TODO: Check!

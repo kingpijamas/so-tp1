@@ -55,7 +55,7 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 	return msgsnd(toIpcId, (void*) msg, MSG_SIZE,IPC_NOWAIT);
 }
 
-int ipc_rcv(int from_id, void * buf, int len) {
+int ipc_recv(int from_id, void * buf, int len) {
 	int myIpcId = ipc_get(from_id);
 	MsgQueuePackage msg;
 	//ssize_t msgrcv(int msqid, void *msgp, size_t msgsz, long msgtyp, int msgflg)
