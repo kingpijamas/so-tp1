@@ -11,7 +11,7 @@ UTILS = $(SRC)/utils
 MSG = $(SRC)/msg
 RUN = $(MAIN)/$(MAIN_FILE)
 
-MAIN_FILE = tests/ipcTest.c
+MAIN_FILE = tests/ipcTestSignals.c
 IPC = fifo.c
 CLIENT = client.c
 
