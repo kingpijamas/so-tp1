@@ -15,7 +15,7 @@
 #define MSQ_MSG_LEN 200
 
 typedef struct {
-	long from_id;
+	long mtype;
 	int len;
 	char data[MSQ_MSG_LEN];
 } __msq_pkg;
@@ -23,6 +23,7 @@ typedef struct {
 static int __get_msq(int id);
 
 static int __to_read = -1, __read = 0;
+static long __conn = 0;
 static char __msg_data_buf[MSQ_MSG_LEN];
 
 
@@ -34,6 +35,7 @@ int ipc_init(int from_id) {
 
 int ipc_connect(int from_id, int to_id){
 	printf("%s: Connecting...\n", (from_id == SRV_ID)? "Srv":"Clt");
+    __conn = 0;
 	__to_read = -1;
 	__read = 0;
 	return OK;
@@ -43,7 +45,7 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 	__msq_pkg msg;
     printf("\n(Try) %s: Sending %d bytes to %d through %d...\n", (from_id == SRV_ID)? "Srv":"Clt", len, to_id, __get_msq(to_id));
 
-	msg.from_id = from_id;
+	msg.mtype = from_id;
 	msg.len = len;
 	memcpy(msg.data, buf, len);
 
@@ -60,7 +62,8 @@ int ipc_recv(int from_id, void * buf, int len) { // no es lectura buffereada =S
     printf("\n(Try) %s: Receiving %d bytes through %d...\n", (from_id == SRV_ID)? "Srv":"Clt", len, __get_msq(from_id));
 	
 	if (__to_read == -1) {
-		verify(msgrcv(__get_msq(from_id), &msg, MSQ_MSG_DATA_SIZE, 0/*from_id*/, 0) != -1, "Receive error");
+		verify(msgrcv(__get_msq(from_id), &msg, MSQ_MSG_DATA_SIZE, __conn, 0) != -1, "Receive error");
+		__conn = msg.mtype;
 		memcpy(__msg_data_buf, msg.data, MSQ_MSG_LEN);
 		__to_read = msg.len;
 		__read = 0;
