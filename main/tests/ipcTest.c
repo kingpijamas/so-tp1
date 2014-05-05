@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 			//printf("\nEntro padre\n");
 			while ( messages[i]!=NULL ) {
 				printf("Parent: about to read\n");
-				ipc_rcv(SRV_ID, buf, strlen(messages[i]));
+				ipc_recv(SRV_ID, buf, strlen(messages[i]));
 				printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", (int)strlen(messages[i]), buf, messages[i]);
 				ipc_connect(SRV_ID, INVALID);
 				//printf("Parent: about to read\n");

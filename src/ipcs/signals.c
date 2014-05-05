@@ -81,7 +81,7 @@ int ipc_send(int from_id, int to_id, void * buf, int len){
 }
 
 //lee el archivo de from_id
-int ipc_rcv(int from_id, void * buf, int len){
+int ipc_recv(int from_id, void * buf, int len){
 	char ipcname[20];
 	struct sigaction act; 
 	memset (&act, '\0', sizeof(act));

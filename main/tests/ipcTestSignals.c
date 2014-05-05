@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
 				printf("\nChild: about to send (\"%s\")\n", messages[i]);
 				ipc_send(clientid, srvid, messages[i], strlen(messages[i]));
 				printf("Child: msg sent\n");
-				ipc_rcv(clientid, buf, SRV_RESP_LEN);
+				ipc_recv(clientid, buf, SRV_RESP_LEN);
 				printf("Child: response received (%.*s)\n", SRV_RESP_LEN, buf);
 				failed = !strneq(OK_MSG, buf, SRV_RESP_LEN);
 				if (failed) {
@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
 			printf("\nEntro padre\n");
 			while ( messages[i]!=NULL ) {
 				printf("Parent: about to read\n");
-				ipc_rcv(srvid, buf, strlen(messages[i]));
+				ipc_recv(srvid, buf, strlen(messages[i]));
 				// 
 				FILE * file2=__open(clt,"r",CLIENT_PATH);
 				if(file2==NULL){

@@ -11,7 +11,6 @@ SEMS = $(IPCS)/semaphores
 UTILS = $(SRC)/utils
 MSG = $(SRC)/msg
 
-MAIN_FILE = tests/ipcTestSignals.c
 RUN = tests/ipcTest.c
 IPC = fifo.c
 CLIENT = client.c

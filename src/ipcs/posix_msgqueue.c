@@ -69,7 +69,7 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 }
 
 
-int ipc_rcv(int from_id, void * buf, int len) {
+int ipc_recv(int from_id, void * buf, int len) {
 	struct mq_attr attr=__attr_init();
 	char ipcname[20];
 	sprintf(ipcname, "/%d", from_id);
