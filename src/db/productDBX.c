@@ -114,10 +114,6 @@ db_ret_code __save_product(Product product) {
 db_ret_code __get_product_by_name(product_name name, Product * productp) {
 	Product rdProduct;
 
-	if (!__init) {
-		return DB_NOT_INITIALIZED;
-	}
-
 	FILE * file = __open(name, "r");
 	if (file == NULL) {
 		return NO_PRODUCT_FOR_NAME;
@@ -132,9 +128,7 @@ db_ret_code __get_product_by_name(product_name name, Product * productp) {
 db_ret_code __update_product(Product product) {
 	int getVal;
 	Product originalProduct;
-	if (!__init) {
-		return DB_NOT_INITIALIZED;
-	}
+
 	getVal = __get_product_by_name(product.name, &originalProduct);
 	switch (getVal) {
 		case NO_PRODUCT_FOR_NAME:
@@ -151,9 +145,6 @@ db_ret_code __update_product(Product product) {
 db_ret_code __delete_product(product_name name) {
 	Product product;
 	int getVal; 
-	if (!__init) {
-		return DB_NOT_INITIALIZED;
-	}
 
 	getVal = __get_product_by_name(name, &product);
 	switch (getVal) {
