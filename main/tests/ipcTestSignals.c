@@ -54,8 +54,6 @@ int main(int argc, char **argv) {
 			break;
 		case 0: /* child */
 			usleep(1000);
-			//printf("\nHijo:\n");
-			//semaphore_stop(SYNC_SEM);
 			while ( messages[i]!=NULL && !failed ) {
 				FILE * file=__open(srv,"r", SERVER_PATH);
 				if(file==NULL){
@@ -68,8 +66,6 @@ int main(int argc, char **argv) {
 				if(file2==NULL){
 					printf("%s\n","Error opening client id file");
 				}
-				// printf("%d\n",clientid);
-				// printf("%d\n",fileno(file));
 				fprintf(file2, "%d\n", clientid);
 				fclose(file2);
 
@@ -106,25 +102,21 @@ int main(int argc, char **argv) {
 			fprintf(file, "%d\n", srvid);
 			fclose(file);
 			//
-
 			ipc_init(srvid);
-			// ipc_connect(srvid, INVALID);
-			// //semaphore_let(SYNC_SEM);
 			printf("\nEntro padre\n");
 			printf("CLIENT ID %d\n",clientid);
 			printf("SRV %d\n",srvid);
 			while ( messages[i]!=NULL ) {
-				printf("CLIENT ID %d\n",clientid);
-				printf("SRV %d\n",srvid);
 				printf("Parent: about to read\n");
+				ipc_rcv(srvid, buf, strlen(messages[i]));
 				// 
 				FILE * file2=__open(clt,"r",CLIENT_PATH);
 				if(file2==NULL){
 					printf("%s\n","Error opening client id file2 in parent");
 				}
 				while(fscanf(file2,"%d\n", &clientid) != EOF) {;}
+				printf("%d\n",clientid);
 				//
-				ipc_rcv(srvid, buf, strlen(messages[i]));
 				printf("CLIENT ID %d\n",clientid);
 				printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", (int)strlen(messages[i]), buf, messages[i]);
 				if (strneq(messages[i], buf, strlen(messages[i]))) {
