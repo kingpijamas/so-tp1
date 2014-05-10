@@ -11,7 +11,7 @@
 
 #define SHM_SIZE 100
 
-#define SHM_SEM_NUM 4
+#define SHM_SEM_NUM 3
 
 static void __get_shm();
 static void __wipe_shm();
@@ -25,7 +25,6 @@ static char * shm;
 typedef enum {
 	SEM_SRV,
 	SEM_CLT,
-	SEM_WRITE,
 	SEM_CONN
 } __semaphore;
 
@@ -54,7 +53,7 @@ int ipc_connect(int from_id, int to_id) { // should fail when there is no server
 		return OK; // it's like an accept
 	default:
 		printf("\nCLT(%d): connect (CLT(%d)<->SRV(%d))\n", from_id, from_id, to_id);
-		//semaphore_init(SHM_SEM_NUM, false);
+		semaphore_init(SHM_SEM_NUM, false);
 		semaphore_stop(SEM_CONN);
 		__get_shm();
 		return OK;

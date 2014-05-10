@@ -27,6 +27,7 @@ void semaphore_init(int sem_n, boolean creat) {
 		error_text = "Failure creating semaphore(s)";
 		flags = flags | IPC_CREAT | O_EXCL;
 	}
+	printf("sem_n: %d\n", sem_n);
 	verify((__sems_id = semget(key_get('S'), sem_n, flags)) != -1, error_text);
 	__sem_n = sem_n;
 	if (creat) {
@@ -44,7 +45,7 @@ void semaphore_stop(int sem_id) {
 	verify(__update_sem(sem_id, -1) != -1, "Failure waiting at semaphore");
 }
 
-void semaphore_destroy(int sem_id) {
+void semaphore_destroy(int sem_id) { // destroys the whole set!
 	semctl(__sems_id, 0, IPC_RMID);
 	__sems_id = __sem_n = -1;
 }
