@@ -8,8 +8,10 @@
 #include "../../include/semaphore.h"
 #include "../../include/rdwrn.h"
 #include "../../include/key.h"
+#include "../../include/utils.h"
 
 #define SHM_SIZE 100
+#define SHM_MSG_LEN (SHM_SIZE - sizeof(int))
 
 #define SHM_SEM_NUM 3
 
@@ -19,8 +21,8 @@ static void __print_sem(int sem_id);
 static void __print_all_sem();
 static void __print_shm();
 
-static int shm_id, to_read = -1, read = 0;
-static char * shm;
+static int __shm_id, __to_read = -1, __read = 0;
+static char * __shm;
 
 typedef enum {
 	SEM_SRV,
@@ -36,8 +38,8 @@ int ipc_init(int from_id) {
 		__wipe_shm();
 		__print_shm();
 		semaphore_init(SHM_SEM_NUM, true);
-		__print_all_sem();
 		semaphore_let(SEM_CONN);
+		__print_all_sem();
 		return OK;
 	default:
 		printf("\nCLT(%d): init\n", from_id);
@@ -50,12 +52,14 @@ int ipc_connect(int from_id, int to_id) { // should fail when there is no server
 	case SRV_ID:
 		printf("\nSRV(%d): connect (SRV(%d)<->CLT(%d))\n", from_id, from_id, to_id);
 		semaphore_let(SEM_CLT);
+		__print_sem(SEM_CLT);
 		return OK; // it's like an accept
 	default:
 		printf("\nCLT(%d): connect (CLT(%d)<->SRV(%d))\n", from_id, from_id, to_id);
 		semaphore_init(SHM_SEM_NUM, false);
 		semaphore_stop(SEM_CONN);
 		__get_shm();
+		__print_all_sem();
 		return OK;
 	}
 }
@@ -69,10 +73,10 @@ int ipc_connect(int from_id, int to_id) { // should fail when there is no server
 int ipc_send(int from_id, int to_id, void * buf, int len) {
 	switch(from_id) {
 	case SRV_ID:
-		printf("\nSRV(%d): (TRY) send (SRV->CLT(%d)) \"%.*s\", (%d bytes)\n", len, from_id, to_id, (string)buf, len);
+		printf("\nSRV(%d): (TRY) send (SRV->CLT(%d)) \"%.*s\", (%d bytes)\n", from_id, to_id, len, (string)buf, len);
 		break;
 	default:
-		printf("\nCLT(%d): (TRY) send (CLT->SRV(%d)) \"%.*s\", (%d bytes)\n", len, from_id, to_id, (string)buf, len);
+		printf("\nCLT(%d): (TRY) send (CLT->SRV(%d)) \"%.*s\", (%d bytes)\n", from_id, to_id, len, (string)buf, len);
 		__print_sem(SEM_CLT);
 		semaphore_stop(SEM_CLT);
 		break;
@@ -80,31 +84,41 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 
 	switch(from_id) {
 	case SRV_ID:
-		printf("\nSRV(%d): send (SRV->CLT(%d)) \"%.*s\", (%d bytes)\n", len, from_id, to_id, (string)buf, len);
+		printf("\nSRV(%d): send (SRV->CLT(%d)) \"%.*s\", (%d bytes)\n", from_id, to_id, len, (string)buf, len);
 		break;
 	default:
-		printf("\nCLT(%d): send (CLT->SRV(%d)) \"%.*s\", (%d bytes)\n", len, from_id, to_id, (string)buf, len);
+		printf("\nCLT(%d): send (CLT->SRV(%d)) \"%.*s\", (%d bytes)\n", from_id, to_id, len, (string)buf, len);
 		break;
 	}
 
-	memcpy(shm, &len, sizeof(int));
-	memcpy(shm+sizeof(int), buf, len);
+	memcpy(__shm, &len, sizeof(int));
+	memcpy(__shm+sizeof(int), buf, min(len, SHM_MSG_LEN));
 	printf("Done writing\n");
 	__print_shm();
 	
 	switch (from_id) {
 	case SRV_ID:
-		semaphore_let(SEM_CLT);
-		__print_sem(SEM_CLT);
+		if(semaphore_get_val(SEM_CLT) == 0) {
+			semaphore_let(SEM_CLT);
+			__print_sem(SEM_CLT);
+		}else{
+			printf("[CACA detected]\n\n");
+			exit(1);
+		}
 		break;
 	default:
 		semaphore_let(SEM_SRV);
 		__print_sem(SEM_SRV);
 		break;
 	}
-	return len;
+	return min(len, SHM_MSG_LEN);
 }
 
+//CLT		SRV
+// 1(send) 
+//       	1(recv)
+//		 	1(send)
+// 1(recv)
 //CLT		SRV
 // 1(send) 
 //       	1(recv)
@@ -120,14 +134,15 @@ int ipc_recv(int from_id, void * buf, int len) {
 		printf("\nCLT(%d): (TRY) recv (CLT<-SRV) (%d bytes)\n", from_id, len);
 		break;
 	}
-	if (to_read == -1) { // done reading
+	__print_all_sem();
+	if (__to_read == -1) { // done reading
 		switch(from_id) {
 		case SRV_ID:
-			__print_sem(SEM_SRV);
+			//__print_sem(SEM_SRV);
 			semaphore_stop(SEM_SRV);
 			break;
 		default:
-			__print_sem(SEM_CLT);
+			//__print_sem(SEM_CLT);
 			semaphore_stop(SEM_CLT);
 			break;
 		}
@@ -142,34 +157,26 @@ int ipc_recv(int from_id, void * buf, int len) {
 	}
 //TODO: buffered reading!
 	__print_shm();
-	printf("(before) to_read: %d, len: %d\n", to_read, len);
-	if (to_read == -1) {
-		memcpy(&to_read, shm, sizeof(int));
-		read = 0;
+	printf("(before) __to_read: %d, len: %d\n", __to_read, len);
+	if (__to_read == -1) {
+		memcpy(&__to_read, __shm, sizeof(int));
+		__read = 0;
 	}
-	printf("(after) to_read: %d, len: %d\n", to_read, len);
-	if (len > to_read) {
-		memcpy(buf, shm+sizeof(int)+read, to_read); // TODO: circular buffer!
-		read += to_read;
-		to_read = len-to_read;
+
+	printf("__read: %d, len: %d, SHM_MSG_LEN: %d (%s)\n", __read, len, SHM_MSG_LEN, (__read + len < SHM_MSG_LEN)? "true":"false");
+	if (__read + len < SHM_MSG_LEN) {
+		memcpy(buf, __shm+sizeof(int)+__read, len);
 	} else {
-		memcpy(buf, shm+sizeof(int)+read, len); // TODO: circular buffer!
-		read += len;
-		if (len == to_read) {
-			to_read = -1;
-		} else {
-			to_read -= len;
-		}
+		memcpy(buf, __shm+sizeof(int)+(__read%SHM_MSG_LEN), SHM_MSG_LEN - (__read % SHM_MSG_LEN));
+		memcpy(buf, __shm+sizeof(int), (__read+len-SHM_MSG_LEN) % SHM_MSG_LEN);
 	}
-	printf("(finally) to_read: %d, len: %d\n", to_read, len);
-	if (len == sizeof(char)) {
-		printf("Done reading (\"%c\")\n", ((char *)buf)[0]);
-	} else if (len == sizeof(int)) {
-		printf("Done reading (\"%d\")\n", ((int *) buf)[0]);
-	} else {
-		printf("Done reading (\"%.*s\")\n", len-1, (string)buf);
+	__read += len;
+
+	if (__read == __to_read) {
+		__to_read = -1;
+		__read = 0;
 	}
-	return OK;
+	return len;
 }
 
 int ipc_disconnect(int from_id, int to_id) {
@@ -180,7 +187,14 @@ int ipc_disconnect(int from_id, int to_id) {
 	default:
 		printf("\nCLT(%d): disconnect\n", from_id);
 		__wipe_shm();
-		semaphore_let(SEM_CONN);
+		__print_all_sem();
+//TESING
+		if (semaphore_get_val(SEM_CONN) == 0) {
+			semaphore_let(SEM_CONN);
+		} else {
+			printf("[CACA detected]\n\n");
+			exit(1);
+		}
 		return OK; //fail maybe?
 	}
 }
@@ -192,8 +206,8 @@ int ipc_close(int from_id) {
 		semaphore_destroy(SEM_SRV);
 		semaphore_destroy(SEM_CLT);
 		semaphore_destroy(SEM_CONN);
-		shmdt(shm);
-		shmctl(shm_id, IPC_RMID, 0);
+		shmdt(__shm);
+		shmctl(__shm_id, IPC_RMID, 0);
 		return OK;
 	default:
 		printf("\nCLT(%d): close\n", from_id);
@@ -202,7 +216,7 @@ int ipc_close(int from_id) {
 }
 
 void __wipe_shm() {
-	memset(shm, '\0', SHM_SIZE);
+	memset(__shm, '\0', SHM_SIZE);
 }
 
 void __print_all_sem() {
@@ -228,20 +242,20 @@ void __print_sem(int sem_id) {
 		exit(1);*/
 	}
 	printf("Sem: %s - ", name);
-	semaphore_show(sem_id);
+	printf("Sem val: %d\n", semaphore_get_val(sem_id));
 }
 
 void __get_shm() {
-	verify((shm_id = shmget(key_get('A'), SHM_SIZE, IPC_CREAT /*| IPC_EXCL*/ | 0644)) != -1, "Could not create shared memory area");
-	verify((shm = (char*)shmat(shm_id, NULL, 0)) != (void *)-1, "Could not attach shared memory area");
+	verify((__shm_id = shmget(key_get('A'), SHM_SIZE, IPC_CREAT /*| IPC_EXCL*/ | 0644)) != -1, "Could not create shared memory area");
+	verify((__shm = (char*)shmat(__shm_id, NULL, 0)) != (void *)-1, "Could not attach shared memory area");
 }
 
 void __print_shm() {
 	int i;
 	printf("memory:\n");
-	printf("%d|", ((int *)shm)[0]);
+	printf("%d|", ((int *)__shm)[0]);
 	for(i=sizeof(int); i<SHM_SIZE; i++){
-		printf("%c|", ((string)shm)[i]);
+		printf("%c|", ((string)__shm)[i]);
 	}
 	printf("\n");
 }

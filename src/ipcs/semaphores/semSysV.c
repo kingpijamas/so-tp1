@@ -23,11 +23,13 @@ void semaphore_init(int sem_n, boolean creat) {
 	int flags = 0666;
 	string error_text = "Failure initializing semaphore(s)";
 	if (creat) {
-		semaphore_destroy(0);
+		__sems_id = semget(key_get('S'), sem_n, flags);
+		if (__sems_id != -1) {
+			semaphore_destroy(0);
+		}
 		error_text = "Failure creating semaphore(s)";
 		flags = flags | IPC_CREAT | O_EXCL;
 	}
-	printf("sem_n: %d\n", sem_n);
 	verify((__sems_id = semget(key_get('S'), sem_n, flags)) != -1, error_text);
 	__sem_n = sem_n;
 	if (creat) {
@@ -50,8 +52,10 @@ void semaphore_destroy(int sem_id) { // destroys the whole set!
 	__sems_id = __sem_n = -1;
 }
 
-void semaphore_show(int sem_id) {
-	printf("Sem val: %d\n", semctl(__sems_id, sem_id, GETVAL));
+int semaphore_get_val(int sem_id) {
+	int val = semctl(__sems_id, sem_id, GETVAL);
+	verify(val != -1, "Error getting semaphore value");
+	return val;
 }
 
 int __update_sem(int sem_id, int change) {
