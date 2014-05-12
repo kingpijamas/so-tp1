@@ -7,6 +7,7 @@
 #include "../../include/utils.h"
 #include "../../include/rdwrn.h"
 #include "../../include/common.h"
+#include "../../include/communicator.h"
 #define INVALID -1
 #define SIGNALFILES_IPC_DIR "src"
 #define BUFFER_SIZE 100
@@ -17,6 +18,7 @@ static void __handler(int n);
 static string __get_path(char * name, const char * path);
 static int __write_new(char * id) ;
 static FILE * __open(char * name, const string mode, const char * path);
+static int __id_Server(int id);
 int ipc_connect(int from_id, int to_id);
 int exit_flag;
 
@@ -27,9 +29,12 @@ int exit_flag;
 #define CLIENT_PATH	DB_ROOT_PATH"/"CLIENT_DIR
 
 //Only the server uses init.
-int ipc_init(int from_id){	
-	printf("FROM ID INIT %d\n",from_id );
+int ipc_init(int from_id){
 	char * srv="server";
+	if(from_id==SRV_ID){
+		from_id=getpid();
+		printf("PID SRV %d\n",from_id);
+	}
 	FILE * file=__open(srv,"w+r",SERVER_PATH);
 	if(file==NULL){
 		printf("%s\n","Error opening server id file");
@@ -43,6 +48,8 @@ int ipc_init(int from_id){
 
 //Borro el file del server
 int ipc_close(int from_id){
+	int srvid=__id_Server(from_id);
+	from_id=srvid;
 	char ipcname[20];
 	sprintf(ipcname, "%d", from_id);
 	if (remove(__get_path(ipcname,SIGNALFILES_IPC_DIR)) != 0){
@@ -51,11 +58,20 @@ int ipc_close(int from_id){
 	return OK;
 }
 
-//Crea los archivos de from id si no existen
+//Create the file from_id if it does not exist
 int ipc_connect(int from_id, int to_id){	
 	char * clt="client";
 	char ipcname[20];
 	int ret=OK;
+	int srvid=__id_Server(from_id);
+	if(srvid!=false){
+		from_id=srvid;
+	}else{
+		srvid=__id_Server(to_id);
+		if(srvid!=false){
+			to_id=from_id;
+		}
+	}
 	sprintf(ipcname, "%d", from_id);
 	//Creates the "from" file to pass the information 
 	FILE * file=__open(ipcname,"r",SIGNALFILES_IPC_DIR);
@@ -67,7 +83,7 @@ int ipc_connect(int from_id, int to_id){
 	printf("From id %d To id %d\n",from_id,to_id);
 	if(to_id!=INVALID){
 		printf("%s\n","Client");
-		//Is a client
+		//Client
 		int clientid=getpid();
 		FILE * file2=__open(clt,"w+r",CLIENT_PATH);
 		if(file2==NULL){
@@ -75,6 +91,8 @@ int ipc_connect(int from_id, int to_id){
 		}
 		fprintf(file2, "%d\n", clientid);
 		fclose(file2);
+	}else{
+		//Server
 	}
 	return ret;
 }
@@ -91,6 +109,17 @@ int ipc_disconnect(int from_id, int to_id){
 
 //escribe en el archivo de to_id. Mando señal para despertar.
 int ipc_send(int from_id, int to_id, void * buf, int len){
+	
+	int srvid=__id_Server(from_id);
+	if(srvid!=false){
+		from_id=srvid;
+	}else{
+		srvid=__id_Server(to_id);
+		if(srvid!=false){
+			to_id=srvid;
+		}
+	}
+
 	char ipcname[20];
 	sprintf(ipcname, "%d", to_id);
 	FILE * file=__open(ipcname, "r+w",SIGNALFILES_IPC_DIR);
@@ -113,6 +142,11 @@ int ipc_recv(int from_id, void * buf, int len){
 	sigset_t mask, oldmask;
 	char ipcname[20];
 	struct sigaction act; 
+	// Gets server id
+	int srv=__id_Server(from_id);
+	if(srv!=false){
+		from_id=srv;
+	}
 	//Change the action taken by a process on receipt of the signal
 	memset (&act, '\0', sizeof(act));
 	act.sa_handler = &__handler;
@@ -171,4 +205,21 @@ string __get_path(char * name, const char * path) {
 
 void __handler(int n) {
 	exit_flag=1; 
+}
+
+//Gets the id of the server
+int __id_Server(int id){
+	char * srv="server";
+	int srvid;
+	if (id==SRV_ID){
+		FILE * file=__open(srv,"r", SERVER_PATH);
+		if(file==NULL){
+			printf("%s\n","Error opening server id file in client");
+		}
+		while(fscanf(file,"%d\n", &srvid) != EOF) {;}
+		return srvid;
+	}else{
+		return false;
+	}
+
 }

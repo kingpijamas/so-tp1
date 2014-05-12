@@ -50,17 +50,16 @@ int main(int argc, char **argv) {
 			usleep(1000);
 			clientid=getpid();
 			while ( messages[i]!=NULL && !failed ) {
-				FILE * file=__open(srv,"r", SERVER_PATH);
-				if(file==NULL){
-					printf("%s\n","Error opening server id file in client");
-				}
-				while(fscanf(file,"%d\n", &srvid) != EOF) {;}
+				// FILE * file=__open(srv,"r", SERVER_PATH);
+				// if(file==NULL){
+				// 	printf("%s\n","Error opening server id file in client");
+				// }
+				// while(fscanf(file,"%d\n", &srvid) != EOF) {;}
 				//
 				printf("\nEntro hijo\n");
-				printf("Client id %d Server id %d\n",clientid,srvid);
-				ipc_connect(clientid, srvid);
+				ipc_connect(clientid, SRV_ID);
 				printf("\nChild: about to send (\"%s\")\n", messages[i]);
-				ipc_send(clientid, srvid, messages[i], strlen(messages[i]));
+				ipc_send(clientid, SRV_ID, messages[i], strlen(messages[i]));
 				printf("Child: msg sent\n");
 				ipc_recv(clientid, buf, SRV_RESP_LEN);
 				printf("Child: response received (%.*s)\n", SRV_RESP_LEN, buf);
@@ -70,7 +69,7 @@ int main(int argc, char **argv) {
 				  } else {
 				  	printf("Child: ok response received\n");
 				  }
-				ipc_disconnect(clientid, srvid);
+				ipc_disconnect(clientid, SRV_ID);
 				i++;
 			}
 			//semaphore_let(SYNC_SEM);
@@ -81,12 +80,13 @@ int main(int argc, char **argv) {
 			printf("\nPadre:\n");			
 			//
 			srvid=getpid();
-			ipc_init(srvid);
+			printf("Server id in Test%d\n",srvid);
+			ipc_init(SRV_ID);
 			printf("\nEntro padre\n");
 			while ( messages[i]!=NULL ) {
 				printf("Parent: about to read\n");
-				ipc_recv(srvid, buf, strlen(messages[i]));
-				// 
+				ipc_recv(SRV_ID, buf, strlen(messages[i]));
+				// I can't omit this because usually the server receives the id at the beginning
 				FILE * file2=__open(clt,"r",CLIENT_PATH);
 				if(file2==NULL){
 					printf("%s\n","Error opening client id file2 in parent");
@@ -97,15 +97,15 @@ int main(int argc, char **argv) {
 				printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", (int)strlen(messages[i]), buf, messages[i]);
 				if (strneq(messages[i], buf, strlen(messages[i]))) {
 					printf("Parent: [OK]\n");
-					ipc_send(srvid, clientid, OK_MSG, SRV_RESP_LEN);
+					ipc_send(SRV_ID, clientid, OK_MSG, SRV_RESP_LEN);
 				} else {
 					printf("Parent: [ERROR]\n");
-					ipc_send(srvid, clientid, NOT_OK_MSG, SRV_RESP_LEN);
+					ipc_send(SRV_ID, clientid, NOT_OK_MSG, SRV_RESP_LEN);
 					//exit(1);
 				}
 				i++;
 			}
-			ipc_close(srvid);
+			ipc_close(SRV_ID);
 			printf("Parent: out\n");
 			break;
 	}

@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #define SRV_INVALID_ID -1
+#define INVALID -1
 
 static void __handle_get_product(int client_id);
 static void __handle_write_product(int client_id);
@@ -30,7 +31,7 @@ void srv_start() { //TODO: signal()!
 
 	signal(SIGINT, __srv_stop);
 	while(true) {
-		ipc_connect(SRV_ID, 0);
+		ipc_connect(SRV_ID, INVALID);
 		/*IMPORTANT:
 		Do this, and nothing will work =) (if the srv's asleep, 
 		the scheduler gives priority to the clt and everything fails)
