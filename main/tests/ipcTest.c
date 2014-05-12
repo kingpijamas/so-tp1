@@ -39,11 +39,11 @@ int main(int argc, char **argv) {
 			//printf("\nEntro hijo\n");
 			while ( messages[i]!=NULL && !failed ) {
 				ipc_connect(CLT_ID, SRV_ID);
-				//printf("\nChild: about to send (\"%s\")\n", messages[i]);
+				printf("\nChild: about to send (\"%s\")\n", messages[i]);
 				ipc_send(CLT_ID, SRV_ID, messages[i], strlen(messages[i]));
-				//printf("Child: msg sent\n");
+				printf("Child: msg sent\n");
 				ipc_recv(CLT_ID, buf, SRV_RESP_LEN);
-				//printf("Child: response received (%.*s)\n", SRV_RESP_LEN, buf);
+				printf("Child: response received (%.*s)\n", SRV_RESP_LEN, buf);
 				failed = !strneq(OK_MSG, buf, SRV_RESP_LEN);
 				if (failed) {
 					printf("Child: Error\n");
@@ -66,9 +66,9 @@ int main(int argc, char **argv) {
 			//printf("\nEntro padre\n");
 			while ( messages[i]!=NULL ) {
 				ipc_connect(SRV_ID, INVALID);
-				//printf("Parent: about to read\n");
+				printf("Parent: about to read\n");
 				ipc_recv(SRV_ID, buf, strlen(messages[i]));
-				//printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", strlen(messages[i]), buf, messages[i]);
+				printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", strlen(messages[i]), buf, messages[i]);
 				if (strneq(messages[i], buf, strlen(messages[i]))) {
 					printf("Parent: [OK]\n");
 					ipc_send(SRV_ID, CLT_ID, OK_MSG, SRV_RESP_LEN);

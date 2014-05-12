@@ -8,7 +8,7 @@
 
 #define SRV_INVALID_ID -1
 
-#define SRV_MSG_FORMAT "\t\t\t\t\t\t\t\t|\t\t\t"
+#define SRV_MSG_FORMAT ""//"\t\t\t\t\t\t\t\t|\t\t\t"
 
 static void __handle_get_product(int client_id);
 static void __handle_write_product(int client_id);
