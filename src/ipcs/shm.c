@@ -100,16 +100,11 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 	memcpy(__shm, &len, sizeof(int));
 	memcpy(__shm+sizeof(int), buf, min(len, SHM_MSG_LEN));
 	printf("%sDone writing\n", from_id == SRV_ID? SRV_MSG_FORMAT:"");
-	//__print_shm(from_id);
 
 	__print_all_sem(from_id);
 	printf("\n");
 	switch (from_id) {
 	case SRV_ID:
-//		if(semaphore_get_val(SEM_CLT) != 0) {
-//			printf("%s[CACA detected]\n\n", from_id == SRV_ID? SRV_MSG_FORMAT:"");
-//			exit(1);
-//		}
 		semaphore_let(SEM_CLT);
 		break;
 	default:
@@ -120,17 +115,6 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 	printf("\n%s(%d): sent (SRV->CLT(%d)) \"%.*s\", (%d bytes) >\n\n", from_id == SRV_ID? SRV_MSG_FORMAT"SRV":"CLT", from_id, to_id, len, (string)buf, min(len, SHM_MSG_LEN));
 	return min(len, SHM_MSG_LEN);
 }
-
-//CLT		SRV
-// 1(send) 
-//       	1(recv)
-//		 	1(send)
-// 1(recv)
-//CLT		SRV
-// 1(send) 
-//       	1(recv)
-//		 	1(send)
-// 1(recv)
 
 int ipc_recv(int from_id, void * buf, int len) {
 	switch(from_id) {
@@ -163,8 +147,6 @@ int ipc_recv(int from_id, void * buf, int len) {
 		printf("\nCLT(%d): recv (CLT<-SRV) (%d bytes)\n", from_id, len);
 		break;
 	}
-
-	//__print_shm(from_id);
 	printf("%s(before) __to_read: %d, len: %d\n", from_id == SRV_ID? SRV_MSG_FORMAT:"", __to_read, len);
 	if (__to_read == -1) {
 		memcpy(&__to_read, __shm, sizeof(int));
@@ -205,7 +187,7 @@ int ipc_disconnect(int from_id, int to_id) {
 		printf("\n< CLT(%d): (TRY) disconnect\n", from_id);
 		__wipe_shm();
 		__print_all_sem(from_id);
-//TESING
+
 		if (semaphore_get_val(SEM_CONN) != 0) {
 			printf("%s[CACA detected]\n\n", from_id == SRV_ID? SRV_MSG_FORMAT:"");
 			exit(1);
@@ -239,7 +221,7 @@ int ipc_close(int from_id) {
 }
 
 void __get_shm() {
-	verify((__shm_id = shmget(key_get('A'), SHM_SIZE, IPC_CREAT /*| IPC_EXCL*/ | 0644)) != -1, "Could not create shared memory area");
+	verify((__shm_id = shmget(key_get('A'), SHM_SIZE, IPC_CREAT | 0644)) != -1, "Could not create shared memory area");
 	verify((__shm = (char*)shmat(__shm_id, NULL, 0)) != (void *)-1, "Could not attach shared memory area");
 }
 
@@ -265,9 +247,6 @@ void __print_sem(int from_id, int sem_id) {
 	case SEM_CONN:
 		name = "CONN";
 		break;
-	/*default:
-		printf("\n\n%d is not a valid __semaphore id\n\n", sem_id);
-		exit(1);*/
 	}
 	printf("%sSem: %s - ", from_id == SRV_ID? SRV_MSG_FORMAT:"", name);
 	printf("Sem val: %d\n", semaphore_get_val(sem_id));
