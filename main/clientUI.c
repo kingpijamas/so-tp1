@@ -98,4 +98,5 @@ string __get_err_str(int option) {
 	case 5:
 		return "al intentar dar de baja el producto";
 	}
+	return "";
 }
