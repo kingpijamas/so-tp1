@@ -14,7 +14,6 @@
 
 #define INVALID -1
 #define BUFFER_SIZE 100
-#define UNEXPECTED_DELETE_ERROR 2
 
 #define ALL_RW S_IRWXU|S_IRWXG|S_IRWXO
 
@@ -99,8 +98,9 @@ int ipc_connect(int from_id, int to_id){
 
 //Write to_id file. Send signal.
 int ipc_send(int from_id, int to_id, void * buf, int len){
-	
+	int ret;
 	int srvid=__id_Server(from_id);
+
 	if(srvid!=false){
 		from_id=srvid;
 	}else{
@@ -113,19 +113,13 @@ int ipc_send(int from_id, int to_id, void * buf, int len){
 	char ipc_name[20];
 	sprintf(ipc_name, "%d", to_id);
 	FILE * file=__open(ipc_name, "r+w",SIGNAL_DIR);
-	if(file == NULL){
-		printf("After open, file null. ipc_name:%s\n to_id:%d",ipc_name,to_id);
-		return ERROR;
-	}
+	verify(file != NULL, "Null file after open");
+
 	int fd = fileno(file);
-	int ret = fwriten(fd, &len, sizeof(int));
-	if (ret != -1) {
-		fwriten(fd, buf, len); //atomic.
-	}
-	if(ret == -1){
-		printf("%s\n","Fwriten returning -1");
-		return ERROR;
-	}
+
+	verify((ret = fwriten(fd, &len, sizeof(int))) != -1, "Send error");
+	verify((ret = fwriten(fd, buf, len)) != -1, "Send error");
+
 	printf("%s\n","Sending signal");
 	kill(to_id,SIGUSR1);
 	return fclose(file);
@@ -161,18 +155,16 @@ int ipc_recv(int from_id, void * buf, int len){
 		sigprocmask (SIG_UNBLOCK, &mask, NULL);
 
 		sprintf(ipc_name, "%d", from_id);
-		FILE * file = __open(ipc_name, "r+",SIGNAL_DIR);
-		if(file==NULL){
-			printf("%s\n","Null"); 
-			return ERROR;
-		}
-		freadn(fileno(file), __msg_data_buf, SIGNAL_MSG_DATA_SIZE);
-		__exit_flag=0;
 
+		FILE * file = __open(ipc_name, "r+",SIGNAL_DIR);
+		verify(file != NULL, "Null file after open");
+
+		freadn(fileno(file), __msg_data_buf, SIGNAL_MSG_DATA_SIZE);
+
+		__exit_flag=0;
 		__to_read = ((int *) __msg_data_buf)[0];
 		__read = 0;
 	}
-
 
 	if (__read + len < SIGNAL_MSG_LEN) {
 		memcpy(buf, __msg_data_buf+sizeof(int)+__read, len);
@@ -220,10 +212,7 @@ int ipc_close(int from_id){
 
 int __write_new(char * id) {
 	FILE * file = __open(id, "w+",SIGNAL_DIR);
-	if (file==NULL){
-		printf("%s\n","__write_new file null");
-		return ERROR;
-	}
+	verify(file != NULL, "__write_new file null");
 	close(fileno(file));
 	return OK;
 }
