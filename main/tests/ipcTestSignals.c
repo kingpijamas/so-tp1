@@ -70,6 +70,7 @@ int main(int argc, char **argv) {
 			ipc_init(SRV_ID);
 			printf("\nEntro padre\n");
 			while ( messages[i]!=NULL ) {
+				ipc_connect(SRV_ID, INVALID);
 				printf("Parent: about to read\n");
 				ipc_recv(SRV_ID, buf, strlen(messages[i]));
 				// I can't omit this because usually the server receives the id at the beginning
@@ -77,8 +78,8 @@ int main(int argc, char **argv) {
 				if(file==NULL){
 					printf("%s\n","Error opening client id file in parent");
 				}
-				while(fscanf(file,"%d\n", &client_id) != EOF) {;}
-				printf("Client id %d\n",client_id);
+				while(fscanf(file, "%d\n", &client_id) != EOF) {;}
+				printf("Client id %d\n", client_id);
 				printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", (int)strlen(messages[i]), buf, messages[i]);
 				if (strneq(messages[i], buf, strlen(messages[i]))) {
 					printf("Parent: [OK]\n");
@@ -87,9 +88,12 @@ int main(int argc, char **argv) {
 					printf("Parent: [ERROR]\n");
 					ipc_send(SRV_ID, client_id, NOT_OK_MSG, SRV_RESP_LEN);
 				}
+				ipc_disconnect(SRV_ID, INVALID);
+				fclose(file);
 				file = NULL;
 				i++;
 			}
+			usleep(1000);
 			ipc_close(SRV_ID);
 			printf("Parent: out\n");
 			break;

@@ -62,10 +62,14 @@ int ipc_close(int from_id){
 }
 
 //Create the file from_id if it does not exist
-int ipc_connect(int from_id, int to_id){	
+int ipc_connect(int from_id, int to_id){
 	char * clt="client";
 	char ipcname[20];
 	int ret=OK;
+
+	if (from_id == SRV_ID) {
+		return OK;
+	}
 
 	int srvid=__id_Server(from_id);
 	if(srvid!=false){
@@ -105,11 +109,17 @@ int ipc_connect(int from_id, int to_id){
 //Delete client file
 int ipc_disconnect(int from_id, int to_id){
 	char ipcname[20];
-	sprintf(ipcname, "%d", from_id);
-	if (remove(__get_path(ipcname,SIGNALFILES_IPC_DIR)) != 0){
-		return UNEXPECTED_DELETE_ERROR;
+
+	switch(from_id) {
+	case SRV_ID:
+		return OK;
+	default:
+		sprintf(ipcname, "%d", from_id);
+		if (remove(__get_path(ipcname, SIGNALFILES_IPC_DIR)) != 0){
+			return UNEXPECTED_DELETE_ERROR;
+		}
+		return OK;		
 	}
-	return OK;
 }
 
 //Write to_id file. Send signal.
