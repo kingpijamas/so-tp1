@@ -2,6 +2,7 @@
 #include "../../include/utils.h"
 #include "../../include/rdwrn.h"
 #include "../../include/common.h"
+#include "../../include/error.h"
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -12,7 +13,6 @@
 #define _POSIX_SOURCE
 
 #define INVALID -1
-#define SIGNALFILES_IPC_DIR "src"
 #define BUFFER_SIZE 100
 #define UNEXPECTED_DELETE_ERROR 2
 
@@ -21,11 +21,9 @@
 #define SIGNAL_MSG_DATA_SIZE (SIGNAL_MSG_LEN+sizeof(int))
 #define SIGNAL_MSG_LEN 200
 
-#define DB_ROOT_PATH "src"
-#define SERVER_DIR "server"
-#define CLIENT_DIR "client"
-#define SERVER_PATH	DB_ROOT_PATH"/"SERVER_DIR
-#define CLIENT_PATH	DB_ROOT_PATH"/"CLIENT_DIR
+#define SIGNAL_DIR "/tmp/so-signal"
+#define SERVER_FILE "server"
+#define CLIENT_FILE "client"
 
 static void __handler(int n);
 static string __get_path(char * name, const char * path);
@@ -41,7 +39,8 @@ int ipc_init(int from_id){
 	if(from_id==SRV_ID){
 		from_id=getpid();
 	}
-	FILE * file=__open("server", "w+r", SERVER_PATH);
+	mkdir(SIGNAL_DIR, ALL_RW);
+	FILE * file=__open(SERVER_FILE, "w+r", SIGNAL_DIR);
 	if(file==NULL){
 		printf("%s\n","Error opening server id file");
 	}
@@ -54,7 +53,7 @@ int ipc_init(int from_id){
 
 //Create the file from_id if it does not exist
 int ipc_connect(int from_id, int to_id){
-	char ipcname[20];
+	char ipc_name[20];
 	int ret=OK;
 
 	__to_read = -1;
@@ -73,11 +72,11 @@ int ipc_connect(int from_id, int to_id){
 		}
 	}
 
-	sprintf(ipcname, "%d", from_id);
+	sprintf(ipc_name, "%d", from_id);
 	//Creates the "from" file to pass the information 
-	FILE * file=__open(ipcname,"r",SIGNALFILES_IPC_DIR);
+	FILE * file=__open(ipc_name,"r",SIGNAL_DIR);
 	if(file==NULL){
-		ret=__write_new(ipcname);
+		ret=__write_new(ipc_name);
 	}else{
 		fclose(file);
 	}
@@ -86,7 +85,7 @@ int ipc_connect(int from_id, int to_id){
 		printf("%s\n","Client");
 		//Client
 		int clientid=getpid();
-		FILE * file2=__open("client", "w+r", CLIENT_PATH);
+		FILE * file2=__open(CLIENT_FILE, "w+r", SIGNAL_DIR);
 		if(file2==NULL){
 		printf("%s\n","Error opening client id file");
 		}
@@ -111,11 +110,11 @@ int ipc_send(int from_id, int to_id, void * buf, int len){
 		}
 	}
 
-	char ipcname[20];
-	sprintf(ipcname, "%d", to_id);
-	FILE * file=__open(ipcname, "r+w",SIGNALFILES_IPC_DIR);
+	char ipc_name[20];
+	sprintf(ipc_name, "%d", to_id);
+	FILE * file=__open(ipc_name, "r+w",SIGNAL_DIR);
 	if(file == NULL){
-		printf("After open, file null. ipcname:%s\n to_id:%d",ipcname,to_id);
+		printf("After open, file null. ipc_name:%s\n to_id:%d",ipc_name,to_id);
 		return ERROR;
 	}
 	int fd = fileno(file);
@@ -135,7 +134,7 @@ int ipc_send(int from_id, int to_id, void * buf, int len){
 //Reads from_id file
 int ipc_recv(int from_id, void * buf, int len){
 	sigset_t mask, oldmask;
-	char ipcname[20];
+	char ipc_name[20];
 	struct sigaction act;
 
 	if (__to_read == -1) {
@@ -161,8 +160,8 @@ int ipc_recv(int from_id, void * buf, int len){
 		}
 		sigprocmask (SIG_UNBLOCK, &mask, NULL);
 
-		sprintf(ipcname, "%d", from_id);
-		FILE * file = __open(ipcname, "r+",SIGNALFILES_IPC_DIR);
+		sprintf(ipc_name, "%d", from_id);
+		FILE * file = __open(ipc_name, "r+",SIGNAL_DIR);
 		if(file==NULL){
 			printf("%s\n","Null"); 
 			return ERROR;
@@ -193,17 +192,16 @@ int ipc_recv(int from_id, void * buf, int len){
 
 //Delete client file
 int ipc_disconnect(int from_id, int to_id){
-	char ipcname[20];
+	char ipc_name[20];
 
 	switch(from_id) {
 	case SRV_ID:
 		return OK;
 	default:
-		sprintf(ipcname, "%d", from_id);
-		if (remove(__get_path(ipcname, SIGNALFILES_IPC_DIR)) != 0){
-			return UNEXPECTED_DELETE_ERROR;
-		}
-		return OK;		
+		sprintf(ipc_name, "%d", from_id);
+		verify(unlink(__get_path(ipc_name, SIGNAL_DIR)) == 0, "Unexpected delete error");
+		verify(unlink(__get_path(CLIENT_FILE, SIGNAL_DIR)) == 0, "Unexpected delete error");
+		return OK;
 	}
 }
 
@@ -211,16 +209,17 @@ int ipc_disconnect(int from_id, int to_id){
 int ipc_close(int from_id){
 	int srvid=__id_Server(from_id);
 	from_id=srvid;
-	char ipcname[20];
-	sprintf(ipcname, "%d", from_id);
-	if (remove(__get_path(ipcname,SIGNALFILES_IPC_DIR)) != 0){
-		return UNEXPECTED_DELETE_ERROR;
-	}
+	char ipc_name[20];
+	sprintf(ipc_name, "%d", from_id);
+	printf("%s\n", __get_path(ipc_name, SIGNAL_DIR));
+	verify(unlink(__get_path(ipc_name, SIGNAL_DIR)) == 0, "Unexpected delete error");
+	verify(unlink(__get_path(SERVER_FILE, SIGNAL_DIR)) == 0, "Unexpected delete error");
+	verify(rmdir(SIGNAL_DIR) == 0, "Could not remove ipc directory");
 	return OK;
 }
 
 int __write_new(char * id) {
-	FILE * file = __open(id, "w+",SIGNALFILES_IPC_DIR);
+	FILE * file = __open(id, "w+",SIGNAL_DIR);
 	if (file==NULL){
 		printf("%s\n","__write_new file null");
 		return ERROR;
@@ -246,10 +245,10 @@ void __handler(int n) {
 
 //Gets the id of the server
 int __id_Server(int id){
-	char * srv="server";
+	char * srv=SERVER_FILE;
 	int srvid;
 	if (id==SRV_ID){
-		FILE * file=__open(srv,"r", SERVER_PATH);
+		FILE * file=__open(srv,"r", SIGNAL_DIR);
 		if(file==NULL){
 			printf("%s\n","Error opening server id file in client");
 		}
