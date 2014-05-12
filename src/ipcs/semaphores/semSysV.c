@@ -24,6 +24,7 @@ void semaphore_init(int sem_n, boolean creat) {
 	string error_text = "Failure initializing semaphore(s)";
 	if (creat) {
 		__sems_id = semget(key_get('S'), sem_n, flags);
+		printf("__sems_id: %d\n", __sems_id);
 		if (__sems_id != -1) {
 			semaphore_destroy(0);
 		}

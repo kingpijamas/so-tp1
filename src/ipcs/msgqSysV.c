@@ -57,7 +57,7 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 	return min(len, MSQ_MSG_LEN);
 }
 
-int ipc_recv(int from_id, void * buf, int len) { // no es lectura buffereada =S
+int ipc_recv(int from_id, void * buf, int len) {
 	__msq_pkg msg;
 
     printf("\n(Try) %s: Receiving %d bytes through %d...\n", (from_id == SRV_ID)? "Srv":"Clt", len, __get_msq(from_id));
