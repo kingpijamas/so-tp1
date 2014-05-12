@@ -2,6 +2,7 @@
 #include "../../include/common.h"
 #include "../../include/key.h"
 #include "../../include/error.h"
+#include "../../include/utils.h"
 #include <sys/msg.h>
 #include <stdio.h>
 #include <stdlib.h>
