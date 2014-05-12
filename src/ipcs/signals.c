@@ -12,7 +12,7 @@
 #define _POSIX_SOURCE
 
 #define INVALID -1
-#define SIGNALFILES_IPC_DIR "src"
+#define SIGNALFILES_IPC_DIR "resources"
 #define BUFFER_SIZE 100
 #define UNEXPECTED_DELETE_ERROR 2
 
