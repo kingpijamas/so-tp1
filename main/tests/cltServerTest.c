@@ -12,6 +12,7 @@
 #include "../../include/communicator.h"
 #include "../../include/server.h"
 #include "../../include/msg.h"
+#include "../../include/client.h"
 
 
 #define CLT_ID 1
@@ -20,15 +21,6 @@
 #define SRV_RESP_LEN 2
 
 static void fatal(char *s);
-static void bye(int sig);
-static void __connect();
-static void __send(void * buf, int len);
-static void __recv(void * buf, int len);
-static void __disconnect();
-static boolean __get_product(string name, boolean expecting_failure);
-static boolean __remove_product(string name, boolean expecting_failure);
-static boolean __write_product(string name, int quantity, boolean expecting_failure);
-static boolean __handle_not_ok_resp(msg_type type, boolean expecting_failure);
 
 int main(int argc, char **argv) {
 	boolean passed;
@@ -49,7 +41,7 @@ int main(int argc, char **argv) {
 					&& (clt_show_product("rubber") != OK)
 					&& (clt_deposit_product("rubber", 1) == OK);
 			printf("\n\nAll tests done: %s\n", !passed? "[FAILED]":"[OK]");
-			ipc_close(CLT_ID);
+			//ipc_close(CLT_ID);
 			break;
 		default: /* parent (server) */
 			srv_start();
@@ -61,9 +53,4 @@ int main(int argc, char **argv) {
 void fatal(char *s) {
 	perror(s);
 	exit(1);
-}
-
-void bye(int sig) {
-	printf("Srv: received SIGPIPE\n");
-	exit(0);
 }

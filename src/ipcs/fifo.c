@@ -103,7 +103,7 @@ int ipc_close(int from_id) {
 }
 
 fdesc __get_fifo(int receiver_id, int flags) {
-	return open(__get_fifo_name(receiver_id), flags /*| S_IFIFO*/);
+	return open(__get_fifo_name(receiver_id), flags /*TODO: check! | S_IFIFO*/);
 }
 
 int __mk_fifo(string fifo_name) {

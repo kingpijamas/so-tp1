@@ -5,10 +5,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 #include "../../../include/error.h"
 
-#define BASE_SEM_NAME "so-sem-posix-"
+#define BASE_SEM_NAME "so-sem-posix"
 
 static sem_t * __sem_get();
 //static void __sem_show_value();
@@ -59,6 +58,6 @@ string __as_sem_name(int sem_id) {
 	if (buf == NULL) {
 		fail("Could not allocate memory");
 	}
-	sprintf(buf, "/"BASE_SEM_NAME"%d", sem_id);
+	sprintf(buf, "/"BASE_SEM_NAME"-%d", sem_id);
 	return (string) buf;
 }

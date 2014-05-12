@@ -82,10 +82,11 @@ int ipc_connect(int from_id, int to_id) { // should fail when there is no server
 // 1(recv)
 
 int ipc_send(int from_id, int to_id, void * buf, int len) {
+	int sent = min(len, SHM_MSG_LEN);
 	switch(from_id) {
 	case SRV_ID:
 		printf("\n%s< SRV(%d): (TRY) send (SRV->CLT(%d)) \"%.*s\", (%d bytes)\n", from_id == SRV_ID? SRV_MSG_FORMAT:"", from_id, to_id, len, (string)buf, len);
-		printf("\n%sSRV(%d): send (SRV->CLT(%d)) \"%.*s\", (%d bytes)\n", from_id == SRV_ID? SRV_MSG_FORMAT:"", from_id, to_id, len, (string)buf, len);
+		printf("\n%sSRV(%d): send (SRV->CLT(%d)) \"%.*s\", (%d bytes)\n", from_id == SRV_ID? SRV_MSG_FORMAT:"", from_id, to_id, sent, (string)buf, sent);
 		break;
 	default:
 		printf("\n< CLT(%d): (TRY) send (CLT->SRV(%d)) \"%.*s\", (%d bytes)\n", from_id, to_id, len, (string)buf, len);
@@ -93,11 +94,11 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 		semaphore_stop(SEM_CLT);
 		printf("\n");
 		__print_all_sem(from_id);
-		printf("\nCLT(%d): send (CLT->SRV(%d)) \"%.*s\", (%d bytes)\n", from_id, to_id, len, (string)buf, len);
+		printf("\nCLT(%d): send (CLT->SRV(%d)) \"%.*s\", (%d bytes)\n", from_id, to_id, sent, (string)buf, sent);
 		break;
 	}
 
-	memcpy(__shm, &len, sizeof(int));
+	memcpy(__shm, &sent, sizeof(int));
 	memcpy(__shm+sizeof(int), buf, min(len, SHM_MSG_LEN));
 	printf("%sDone writing\n", from_id == SRV_ID? SRV_MSG_FORMAT:"");
 
@@ -112,8 +113,8 @@ int ipc_send(int from_id, int to_id, void * buf, int len) {
 		break;
 	}
 	__print_all_sem(from_id);
-	printf("\n%s(%d): sent (SRV->CLT(%d)) \"%.*s\", (%d bytes) >\n\n", from_id == SRV_ID? SRV_MSG_FORMAT"SRV":"CLT", from_id, to_id, len, (string)buf, min(len, SHM_MSG_LEN));
-	return min(len, SHM_MSG_LEN);
+	printf("\n%s(%d): sent (SRV->CLT(%d)) \"%.*s\", (%d bytes) >\n\n", from_id == SRV_ID? SRV_MSG_FORMAT"SRV":"CLT", from_id, to_id, sent, (string)buf, sent);
+	return sent;
 }
 
 int ipc_recv(int from_id, void * buf, int len) {
