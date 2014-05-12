@@ -28,12 +28,11 @@ int exit_flag;
 #define SERVER_PATH	DB_ROOT_PATH"/"SERVER_DIR
 #define CLIENT_PATH	DB_ROOT_PATH"/"CLIENT_DIR
 
-//Only the server uses init.
+//Only the server uses init & close.
 int ipc_init(int from_id){
 	char * srv="server";
 	if(from_id==SRV_ID){
 		from_id=getpid();
-		printf("PID SRV %d\n",from_id);
 	}
 	FILE * file=__open(srv,"w+r",SERVER_PATH);
 	if(file==NULL){
@@ -46,7 +45,7 @@ int ipc_init(int from_id){
 	return OK;
 }
 
-//Borro el file del server
+//Delete server file.
 int ipc_close(int from_id){
 	int srvid=__id_Server(from_id);
 	from_id=srvid;
@@ -63,6 +62,7 @@ int ipc_connect(int from_id, int to_id){
 	char * clt="client";
 	char ipcname[20];
 	int ret=OK;
+
 	int srvid=__id_Server(from_id);
 	if(srvid!=false){
 		from_id=srvid;
@@ -72,6 +72,7 @@ int ipc_connect(int from_id, int to_id){
 			to_id=from_id;
 		}
 	}
+
 	sprintf(ipcname, "%d", from_id);
 	//Creates the "from" file to pass the information 
 	FILE * file=__open(ipcname,"r",SIGNALFILES_IPC_DIR);
@@ -97,7 +98,7 @@ int ipc_connect(int from_id, int to_id){
 	return ret;
 }
 
-//borro el file del cliente 
+//Delete client file
 int ipc_disconnect(int from_id, int to_id){
 	char ipcname[20];
 	sprintf(ipcname, "%d", from_id);
@@ -107,7 +108,7 @@ int ipc_disconnect(int from_id, int to_id){
 	return OK;
 }
 
-//escribe en el archivo de to_id. Mando señal para despertar.
+//Write to_id file. Send signal.
 int ipc_send(int from_id, int to_id, void * buf, int len){
 	
 	int srvid=__id_Server(from_id);
@@ -127,7 +128,7 @@ int ipc_send(int from_id, int to_id, void * buf, int len){
 		printf("After open, file null. ipcname:%s\n to_id:%d",ipcname,to_id);
 		return ERROR;
 	}
-	int ret=fwriten(fileno(file),buf,len); //atomico. Si lo interrumpe una señal sigue hasta escribir los n.
+	int ret=fwriten(fileno(file),buf,len); //atomic. 
 	if(ret==-1){
 		printf("%s\n","Fwriten returning -1");
 		return ERROR;
@@ -137,11 +138,12 @@ int ipc_send(int from_id, int to_id, void * buf, int len){
 	return fclose(file);
 }
 
-//lee el archivo de from_id
+//Reads from_id file
 int ipc_recv(int from_id, void * buf, int len){
 	sigset_t mask, oldmask;
 	char ipcname[20];
-	struct sigaction act; 
+	struct sigaction act;
+
 	// Gets server id
 	int srv=__id_Server(from_id);
 	if(srv!=false){
@@ -184,10 +186,6 @@ int __write_new(char * id) {
 	return OK;
 }
 
-// FILE * __open(char * name, const string mode) {
-// 	return fopen(__get_path(name), mode);
-// }
-
 FILE * __open(char * name, const string mode, const char * path) {
 	return fopen(__get_path(name,path), mode);
 }
@@ -197,11 +195,6 @@ string __get_path(char * name, const char * path) {
 	printf("BUF %s\n",buf);
 	return buf;
 }
-
-// string __get_path(char * id) {
-// 	sprintf(buf, "%s/%s", SIGNALFILES_IPC_DIR, id); 
-// 	return buf;
-// }
 
 void __handler(int n) {
 	exit_flag=1; 
