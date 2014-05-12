@@ -14,15 +14,29 @@
 #define _POSIX_SOURCE
 static char buf[BUFFER_SIZE];
 static void __handler(int n);
-static string __get_path(char * id);
+static string __get_path(char * name, const char * path);
 static int __write_new(char * id) ;
-static FILE * __open(char * name, const string mode);
+static FILE * __open(char * name, const string mode, const char * path);
 int ipc_connect(int from_id, int to_id);
 int exit_flag;
 
+#define DB_ROOT_PATH "src"
+#define SERVER_DIR "server"
+#define CLIENT_DIR "client"
+#define SERVER_PATH	DB_ROOT_PATH"/"SERVER_DIR
+#define CLIENT_PATH	DB_ROOT_PATH"/"CLIENT_DIR
 
-//inicia el file del server
-int ipc_init(int from_id){
+//Only the server uses init.
+int ipc_init(int from_id){	
+	printf("FROM ID INIT %d\n",from_id );
+	char * srv="server";
+	FILE * file=__open(srv,"w+r",SERVER_PATH);
+	if(file==NULL){
+		printf("%s\n","Error opening server id file");
+	}
+	fprintf(file, "%d\n", from_id);
+	fclose(file);
+
 	ipc_connect(from_id, INVALID);
 	return OK;
 }
@@ -31,23 +45,37 @@ int ipc_init(int from_id){
 int ipc_close(int from_id){
 	char ipcname[20];
 	sprintf(ipcname, "%d", from_id);
-	if (remove(__get_path(ipcname)) != 0){
+	if (remove(__get_path(ipcname,SIGNALFILES_IPC_DIR)) != 0){
 		return UNEXPECTED_DELETE_ERROR;
 	}
 	return OK;
 }
 
 //Crea los archivos de from id si no existen
-int ipc_connect(int from_id, int to_id){
+int ipc_connect(int from_id, int to_id){	
+	char * clt="client";
 	char ipcname[20];
 	int ret=OK;
 	sprintf(ipcname, "%d", from_id);
-	FILE * file=__open(ipcname,"r");
+	//Creates the "from" file to pass the information 
+	FILE * file=__open(ipcname,"r",SIGNALFILES_IPC_DIR);
 	if(file==NULL){
 		ret=__write_new(ipcname);
-		return ret;
+	}else{
+		fclose(file);
 	}
-	fclose(file);
+	printf("From id %d To id %d\n",from_id,to_id);
+	if(to_id!=INVALID){
+		printf("%s\n","Client");
+		//Is a client
+		int clientid=getpid();
+		FILE * file2=__open(clt,"w+r",CLIENT_PATH);
+		if(file2==NULL){
+		printf("%s\n","Error opening client id file");
+		}
+		fprintf(file2, "%d\n", clientid);
+		fclose(file2);
+	}
 	return ret;
 }
 
@@ -55,7 +83,7 @@ int ipc_connect(int from_id, int to_id){
 int ipc_disconnect(int from_id, int to_id){
 	char ipcname[20];
 	sprintf(ipcname, "%d", from_id);
-	if (remove(__get_path(ipcname)) != 0){
+	if (remove(__get_path(ipcname,SIGNALFILES_IPC_DIR)) != 0){
 		return UNEXPECTED_DELETE_ERROR;
 	}
 	return OK;
@@ -65,7 +93,7 @@ int ipc_disconnect(int from_id, int to_id){
 int ipc_send(int from_id, int to_id, void * buf, int len){
 	char ipcname[20];
 	sprintf(ipcname, "%d", to_id);
-	FILE * file=__open(ipcname, "r+w");
+	FILE * file=__open(ipcname, "r+w",SIGNALFILES_IPC_DIR);
 	if(file==NULL){
 		printf("After open, file null. ipcname:%s\n to_id:%d",ipcname,to_id);
 		return ERROR;
@@ -82,19 +110,27 @@ int ipc_send(int from_id, int to_id, void * buf, int len){
 
 //lee el archivo de from_id
 int ipc_recv(int from_id, void * buf, int len){
+	sigset_t mask, oldmask;
 	char ipcname[20];
 	struct sigaction act; 
+	//Change the action taken by a process on receipt of the signal
 	memset (&act, '\0', sizeof(act));
 	act.sa_handler = &__handler;
 	if (sigaction(SIGUSR1, &act, NULL) < 0) {
 		perror ("sigaction");
 		return 1;
 	}
+ 	// Set up the mask of signals to temporarily block. 
+    sigemptyset (&mask);
+    sigaddset (&mask, SIGUSR1);
+	// Wait for the signal
+	sigprocmask (SIG_BLOCK, &mask, &oldmask);
 	while(!exit_flag){
-		;
+		sigsuspend (&oldmask);
 	}
+	sigprocmask (SIG_UNBLOCK, &mask, NULL);
 	sprintf(ipcname, "%d", from_id);
-	FILE * file=__open(ipcname, "r+");
+	FILE * file=__open(ipcname, "r+",SIGNALFILES_IPC_DIR);
 	if(file==NULL){
 		printf("%s\n","Null"); 
 		return ERROR;
@@ -105,7 +141,7 @@ int ipc_recv(int from_id, void * buf, int len){
 }
 
 int __write_new(char * id) {
-	FILE * file = __open(id, "w+");
+	FILE * file = __open(id, "w+",SIGNALFILES_IPC_DIR);
 	if (file==NULL){
 		printf("%s\n","__write_new file null");
 		return ERROR;
@@ -114,14 +150,24 @@ int __write_new(char * id) {
 	return OK;
 }
 
-FILE * __open(char * name, const string mode) {
-	return fopen(__get_path(name), mode);
+// FILE * __open(char * name, const string mode) {
+// 	return fopen(__get_path(name), mode);
+// }
+
+FILE * __open(char * name, const string mode, const char * path) {
+	return fopen(__get_path(name,path), mode);
 }
 
-string __get_path(char * id) {
-	sprintf(buf, "%s/%s", SIGNALFILES_IPC_DIR, id); 
+string __get_path(char * name, const char * path) {
+	sprintf(buf, "%s/%s", path, name); //this should clear the buffer (verify!)
+	printf("BUF %s\n",buf);
 	return buf;
 }
+
+// string __get_path(char * id) {
+// 	sprintf(buf, "%s/%s", SIGNALFILES_IPC_DIR, id); 
+// 	return buf;
+// }
 
 void __handler(int n) {
 	exit_flag=1; 

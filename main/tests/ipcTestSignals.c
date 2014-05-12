@@ -48,22 +48,16 @@ int main(int argc, char **argv) {
 			break;
 		case 0: /* child */
 			usleep(1000);
+			clientid=getpid();
 			while ( messages[i]!=NULL && !failed ) {
 				FILE * file=__open(srv,"r", SERVER_PATH);
 				if(file==NULL){
 					printf("%s\n","Error opening server id file in client");
 				}
 				while(fscanf(file,"%d\n", &srvid) != EOF) {;}
-				
-				clientid=getpid();
-				FILE * file2=__open(clt,"w+r",CLIENT_PATH);
-				if(file2==NULL){
-					printf("%s\n","Error opening client id file");
-				}
-				fprintf(file2, "%d\n", clientid);
-				fclose(file2);
-
+				//
 				printf("\nEntro hijo\n");
+				printf("Client id %d Server id %d\n",clientid,srvid);
 				ipc_connect(clientid, srvid);
 				printf("\nChild: about to send (\"%s\")\n", messages[i]);
 				ipc_send(clientid, srvid, messages[i], strlen(messages[i]));
@@ -84,15 +78,9 @@ int main(int argc, char **argv) {
 			printf("Child: out %s\n",failed? "[ERROR]":"[OK]");
 			break;
 		default: /* parent */
-			printf("\nPadre:\n");
-			srvid=getpid();
-			FILE * file=__open(srv,"w+r",SERVER_PATH);
-			if(file==NULL){
-				printf("%s\n","Error opening server id file");
-			}
-			fprintf(file, "%d\n", srvid);
-			fclose(file);
+			printf("\nPadre:\n");			
 			//
+			srvid=getpid();
 			ipc_init(srvid);
 			printf("\nEntro padre\n");
 			while ( messages[i]!=NULL ) {
@@ -104,6 +92,7 @@ int main(int argc, char **argv) {
 					printf("%s\n","Error opening client id file2 in parent");
 				}
 				while(fscanf(file2,"%d\n", &clientid) != EOF) {;}
+				printf("Client id %d\n",clientid);
 				//
 				printf("Parent: read (\"%.*s\") --(expecting: \"%s\")\n", (int)strlen(messages[i]), buf, messages[i]);
 				if (strneq(messages[i], buf, strlen(messages[i]))) {
