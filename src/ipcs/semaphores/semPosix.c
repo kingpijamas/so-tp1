@@ -37,11 +37,10 @@ void semaphore_destroy(int sem_id) {
 	sem_unlink(__as_sem_name(sem_id));
 }
 
-void semaphore_show(int sem_id) {
+int semaphore_get_val(int sem_id) {
 	int val;
-	if (sem_getvalue(__sem_get(__as_sem_name(sem_id)), &val) != -1) {
-		printf("Sem val: %d\n", val);
-	}
+	verify(sem_getvalue(__sem_get(__as_sem_name(sem_id)), &val) != -1, "Error getting semaphore value");
+	return val;
 }
 
 void __semaphore_create(int sem_id) {
@@ -56,7 +55,7 @@ sem_t * __sem_get(string sem_name) {
 }
 
 string __as_sem_name(int sem_id) {
-	void * buf = malloc(strlen(BASE_SEM_NAME)+floor(log10(sem_id))+2);
+	void * buf = malloc(200);
 	if (buf == NULL) {
 		fail("Could not allocate memory");
 	}

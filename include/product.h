@@ -5,7 +5,7 @@
 
 #define PRODUCT_MAX_NAME_LEN 15
 
-typedef char product_name[PRODUCT_MAX_NAME_LEN];
+typedef char product_name[PRODUCT_MAX_NAME_LEN+1];
 
 typedef struct {
 	product_name name;

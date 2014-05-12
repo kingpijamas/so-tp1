@@ -3,8 +3,8 @@
 
 #define KEY_FILE "/home/"
 
-key_t key_get(char key_char) {
-	int key = ftok(KEY_FILE, key_char);
+key_t key_get(int id) {
+	int key = ftok(KEY_FILE, id);
 	//printf("Key: %x\n", key);
 	return key;
 }

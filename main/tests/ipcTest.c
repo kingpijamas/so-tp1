@@ -10,7 +10,6 @@
 #include "../../include/communicator.h"
 #include "../../include/semaphore.h"
 
-
 #define CLT_ID 1
 #define INVALID -1
 
@@ -28,9 +27,7 @@ int main(int argc, char **argv) {
 	char buf[200];
 	boolean failed = false;
 	string messages[] = {"hello", "world!", NULL};
-
-	//semaphore_init(SYNC_SEM, true);
-
+	
 	switch (fork()) {
 		case -1:
 			__fatal("Fork error");
@@ -43,7 +40,7 @@ int main(int argc, char **argv) {
 			while ( messages[i]!=NULL && !failed ) {
 				ipc_connect(CLT_ID, SRV_ID);
 				//printf("\nChild: about to send (\"%s\")\n", messages[i]);
-				ipc_send(CLT_ID, 0, messages[i], strlen(messages[i]));
+				ipc_send(CLT_ID, SRV_ID, messages[i], strlen(messages[i]));
 				//printf("Child: msg sent\n");
 				ipc_recv(CLT_ID, buf, SRV_RESP_LEN);
 				//printf("Child: response received (%.*s)\n", SRV_RESP_LEN, buf);
@@ -83,7 +80,6 @@ int main(int argc, char **argv) {
 				ipc_disconnect(SRV_ID, INVALID);
 				i++;
 			}
-
 			usleep(1000);
 			//semaphore_stop(SYNC_SEM);
 			ipc_close(SRV_ID);
