@@ -29,7 +29,7 @@ clt_ret_code clt_show_product(product_name name){
 	Product product;
 
 	if ((ret = __get_product(name, &product)) == OK) {
-		printf("{ name=%s, quantity=%d }\n", product.name, product.quantity);
+		printf("\n\n{ name=%s, quantity=%d }\n\n", product.name, product.quantity);
 	}
 	return ret;
 }

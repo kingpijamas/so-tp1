@@ -175,12 +175,23 @@ string __get_path_to_tuple(product_name name) {
 
 FILE * __lock_table(short l_type) {
 	FILE * table_lock_file = fopen(DB_FULL_PATH_TO_LOCK_FILE, (l_type == F_WRLCK)? "w":"r");
+	
+	//Just to show
+	printf("DBX: Ingrese un caracter para obtener lock de la base de datos\n");
+	getchar();
+	//
+
 	__lock_file(table_lock_file, l_type);
 	return table_lock_file;
 }
 
 void __unlock_table(FILE * table_lock_file) {
-	__unlock_file(table_lock_file);
+	//Just to show
+	printf("DBX: Ingrese un caracter para liberar lock de la base de datos\n");
+	getchar();
+	//
+	
+	__unlock_file(table_lock_file);	
 	fclose(table_lock_file);
 }
 
