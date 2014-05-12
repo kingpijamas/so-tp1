@@ -93,7 +93,7 @@ int ipc_recv(int from_id, void * buf, int len) {
 }
 
 int ipc_disconnect(int from_id, int to_id){
-	 printf("%s: Disconnecting... from %s\n", (from_id == SRV_ID)? "Srv":"Clt", __as_mq_name(from_id));
+	printf("%s: Disconnecting... from %s\n", (from_id == SRV_ID)? "Srv":"Clt", __as_mq_name(from_id));
 	switch (from_id) {
 	case SRV_ID:
 		return OK;
